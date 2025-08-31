@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { BarChart, Droplets, TrendingUp, Download, Loader2, Search, LineChart, PieChart } from 'lucide-react';
+import { BarChart, Droplets, TrendingUp, Download, Loader2, Search, LineChart, PieChart, Send, Sparkles } from 'lucide-react';
 import './App.css';
 
 // Helper function to parse CSV text into an array of objects
@@ -48,6 +48,8 @@ const formatDateForAPI = (date) => {
 // Main App component
 export default function App() {
   const API_BASE_URL = "https://harideeshab-pharma-sales-api.hf.space";
+  
+  const chatContainerRef = useRef(null);
 
   // State management
   const [products, setProducts] = useState([]);
@@ -67,6 +69,14 @@ export default function App() {
   const [error, setError] = useState('');
   const [zipBlob, setZipBlob] = useState(null);
   const [activeTab, setActiveTab] = useState('historical');
+  
+  // --- NEW STATE FOR GEMINI INTEGRATION ---
+  const [geminiSummaryText, setGeminiSummaryText] = useState('');
+  const [userQuestion, setUserQuestion] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isGeminiSummaryLoading, setIsGeminiSummaryLoading] = useState(false);
+  const [isAiChatLoading, setIsAiChatLoading] = useState(false);
+
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -93,6 +103,13 @@ export default function App() {
     fetchInitialData();
   }, [API_BASE_URL]);
 
+  // Scroll to the bottom of the chat window when new messages are added
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatHistory]);
+
   const handleGenerateForecast = async () => {
     if (!selectedProduct) {
       setError('Please select a product.');
@@ -103,6 +120,9 @@ export default function App() {
     setAnalysisData(null);
     setHistoricalSummaryText('');
     setForecastSummaryText('');
+    // Reset AI state on new report generation
+    setGeminiSummaryText('');
+    setChatHistory([]);
     setZipBlob(null);
     setActiveTab('historical');
 
@@ -173,6 +193,72 @@ export default function App() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+  
+  // --- NEW FUNCTIONS FOR GEMINI INTEGRATION ---
+  const handleGenerateGeminiSummary = async () => {
+    setIsGeminiSummaryLoading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('historical_summary', historicalSummaryText);
+      formData.append('forecast_summary', forecastSummaryText);
+      
+      const response = await fetch(`${API_BASE_URL}/generate-gemini-summary/`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`AI API Error: ${errorData.detail || response.statusText}`);
+      }
+
+      const result = await response.json();
+      setGeminiSummaryText(result.gemini_summary);
+    } catch (err) {
+      console.error(err);
+      setError(`Failed to generate AI summary. ${err.message}`);
+    } finally {
+      setIsGeminiSummaryLoading(false);
+    }
+  };
+  
+  const handleAskAI = async (e) => {
+    e.preventDefault();
+    if (!userQuestion.trim()) return;
+    setIsAiChatLoading(true);
+    setError('');
+
+    const newUserQuestion = userQuestion;
+    setChatHistory(prev => [...prev, { sender: 'user', text: newUserQuestion }]);
+    setUserQuestion('');
+
+    try {
+      const formData = new FormData();
+      formData.append('user_prompt', newUserQuestion);
+      formData.append('historical_summary', historicalSummaryText);
+      formData.append('forecast_summary', forecastSummaryText);
+
+      const response = await fetch(`${API_BASE_URL}/ask-ai/`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`AI API Error: ${errorData.detail || response.statusText}`);
+      }
+      
+      const result = await response.json();
+      setChatHistory(prev => [...prev, { sender: 'gemini', text: result.gemini_answer }]);
+
+    } catch (err) {
+      console.error(err);
+      setChatHistory(prev => [...prev, { sender: 'gemini', text: `Sorry, I'm unable to answer that right now. ${err.message}` }]);
+    } finally {
+      setIsAiChatLoading(false);
+    }
+  };
 
   const renderTextSummary = (text) => {
     if (!text) return null;
@@ -225,7 +311,7 @@ export default function App() {
                   className="date-picker-input"
                   showYearDropdown
                   dropdownMode="select"
-                  isClearable // This adds the 'x' button to clear the date
+                  isClearable
                 />
                 <DatePicker
                   selected={summaryToDate}
@@ -240,7 +326,7 @@ export default function App() {
                   className="date-picker-input"
                   showYearDropdown
                   dropdownMode="select"
-                  isClearable // This adds the 'x' button to clear the date
+                  isClearable
                 />
               </div>
               {availableDates.min && <small>Data available from {formatDateForDisplay(availableDates.min.toISOString().split('T')[0])} to {formatDateForDisplay(availableDates.max.toISOString().split('T')[0])}</small>}
@@ -259,7 +345,7 @@ export default function App() {
                   className="date-picker-input"
                   showYearDropdown
                   dropdownMode="select"
-                  isClearable // This adds the 'x' button to clear the date
+                  isClearable
                 />
                 <DatePicker
                   selected={forecastToDate}
@@ -273,7 +359,7 @@ export default function App() {
                   className="date-picker-input"
                   showYearDropdown
                   dropdownMode="select"
-                  isClearable // This adds the 'x' button to clear the date
+                  isClearable
                 />
               </div>
               <small>Select any future date range</small>
@@ -438,12 +524,66 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                 {forecastSummaryText && (
+                {forecastSummaryText && (
                   <div className="card text-card full-width">
                     <h3><TrendingUp /> Forecast Summary</h3>
                     <div className="summary-content">
                       {renderTextSummary(forecastSummaryText)}
                     </div>
+                    {/* --- NEW: AI Summary Button --- */}
+                    <div className="card-footer">
+                      {historicalSummaryText && forecastSummaryText && !geminiSummaryText && (
+                        <button className="ai-button" onClick={handleGenerateGeminiSummary} disabled={isGeminiSummaryLoading}>
+                          {isGeminiSummaryLoading ? <><Loader2 className="loader" /> Generating...</> : <><Sparkles /> Generate AI Executive Summary</>}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* --- NEW: AI Summary Display Card --- */}
+                {geminiSummaryText && (
+                  <div className="card text-card full-width">
+                    <h3><Sparkles /> AI-Powered Executive Summary</h3>
+                    <div className="summary-content">
+                      {renderTextSummary(geminiSummaryText)}
+                    </div>
+                  </div>
+                )}
+                {/* --- NEW: AI Chat Feature --- */}
+                {historicalSummaryText && forecastSummaryText && (
+                  <div className="card chat-card full-width">
+                    <h3><Sparkles /> Ask the AI Assistant</h3>
+                    <div className="chat-container" ref={chatContainerRef}>
+                      {chatHistory.length === 0 ? (
+                        <div className="chat-message-initial">
+                          Ask me anything about the reports! <br/>
+                          E.g., "What are the top strategic recommendations?"
+                        </div>
+                      ) : (
+                        chatHistory.map((msg, index) => (
+                          <div key={index} className={`chat-message ${msg.sender}`}>
+                            {renderTextSummary(msg.text)}
+                          </div>
+                        ))
+                      )}
+                      {isAiChatLoading && (
+                        <div className="chat-message gemini loading">
+                          <Loader2 className="loader" />
+                        </div>
+                      )}
+                    </div>
+                    <form className="chat-input-form" onSubmit={handleAskAI}>
+                      <input
+                        type="text"
+                        value={userQuestion}
+                        onChange={(e) => setUserQuestion(e.target.value)}
+                        placeholder="Ask a question about the reports..."
+                        disabled={isAiChatLoading}
+                      />
+                      <button type="submit" disabled={isAiChatLoading || !userQuestion.trim()}>
+                        <Send />
+                      </button>
+                    </form>
                   </div>
                 )}
               </div>
