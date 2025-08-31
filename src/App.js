@@ -36,7 +36,6 @@ const loadJSZip = () => {
 const formatDateForDisplay = (dateString) => {
   if (!dateString) return '';
   const date = new Date(`${dateString}T00:00:00Z`);
-  // --- CORRECTED FUNCTION NAME ---
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 };
 
@@ -75,8 +74,9 @@ export default function App() {
   const [userQuestion, setUserQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [isAiChatLoading, setIsAiChatLoading] = useState(false);
-  // NEW state to hold the forecast data for the AI
   const [forecastDataCsvText, setForecastDataCsvText] = useState('');
+  // --- CHANGE 1: Add new state for historical data CSV ---
+  const [historicalDataCsvText, setHistoricalDataCsvText] = useState('');
 
 
   useEffect(() => {
@@ -123,7 +123,9 @@ export default function App() {
     setForecastSummaryText('');
     // Reset AI state on new report generation
     setChatHistory([]);
-    setForecastDataCsvText(''); // Reset AI context
+    setForecastDataCsvText(''); 
+    // --- CHANGE 2: Reset historical data state ---
+    setHistoricalDataCsvText('');
     setZipBlob(null);
     setActiveTab('historical');
 
@@ -152,7 +154,6 @@ export default function App() {
       const zip = await window.JSZip.loadAsync(blob);
       const data = {};
 
-      // --- MODIFIED: File processing logic ---
       const filePromises = Object.keys(zip.files).map(async (filename) => {
         const file = zip.files[filename];
         if (filename.endsWith('.png')) {
@@ -169,9 +170,12 @@ export default function App() {
           const textContent = await file.async('text');
           setForecastSummaryText(textContent);
         } else if (filename.includes('full_forecast_data.csv')) {
-          // NEW: Capture the full forecast data for the AI chatbot
           const csvText = await file.async('text');
           setForecastDataCsvText(csvText);
+        // --- CHANGE 3: Read the historical data CSV for the AI ---
+        } else if (filename.includes('historical_data.csv')) {
+          const csvText = await file.async('text');
+          setHistoricalDataCsvText(csvText);
         }
       });
       await Promise.all(filePromises);
@@ -195,13 +199,12 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
   
-  // --- MODIFIED: AI Chat Handler ---
   const handleAskAI = async (e) => {
     e.preventDefault();
     if (!userQuestion.trim()) return;
 
-    // Check if AI context is ready
-    if (!forecastDataCsvText) {
+    // --- CHANGE 4: Check if BOTH historical and forecast data are ready ---
+    if (!forecastDataCsvText || !historicalDataCsvText) {
         setError("The AI context is not ready yet. Please wait a moment after generating the report and try again.");
         return;
     }
@@ -218,15 +221,15 @@ export default function App() {
       formData.append('user_prompt', newUserQuestion);
       formData.append('historical_summary', historicalSummaryText);
       formData.append('forecast_summary', forecastSummaryText);
-      // NEW: Send the detailed forecast data to the backend
       formData.append('forecast_data_csv', forecastDataCsvText);
+      // --- CHANGE 5: Send the detailed historical data to the backend ---
+      formData.append('historical_data_csv', historicalDataCsvText);
 
       const response = await fetch(`${API_BASE_URL}/ask-ai/`, {
         method: 'POST',
         body: formData
       });
 
-      // --- IMPROVED: Error Handling ---
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'The server returned an invalid error format.' }));
         const errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
@@ -238,7 +241,6 @@ export default function App() {
 
     } catch (err) {
       console.error(err);
-      // Display the detailed error in the chat
       setChatHistory(prev => [...prev, { sender: 'gemini', text: `Sorry, I'm unable to answer that right now. ${err.message}` }]);
     } finally {
       setIsAiChatLoading(false);
@@ -267,7 +269,8 @@ export default function App() {
       <header className="hero">
         <Droplets className="hero-icon" />
         <h1>Pharma Sales Forecaster</h1>
-        <p>Select a product to generate a comprehensive sales analysis and a long-term forecast until 2028.</p>
+        {/* --- CHANGE 6: Updated hero description text --- */}
+        <p>Select a product to generate a comprehensive sales analysis and a long-term forecast.</p>
         <div className="controls">
           <div className="select-container">
             <Search className="search-icon" />
@@ -384,7 +387,6 @@ export default function App() {
           <div className="tab-content">
             {activeTab === 'historical' && (
               <div className="grid">
-                {/* (Historical analysis cards remain the same) */}
                 {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && (
                   <div className="card">
                     <h3><BarChart /> Overall Historical Sales</h3>
@@ -438,8 +440,8 @@ export default function App() {
               <div className="grid">
                 {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && (
                   <div className="card full-width">
-                    {/* --- MODIFIED: Chart title --- */}
-                    <h3><TrendingUp /> Long-Term Forecast (until 2028)</h3>
+                    {/* --- CHANGE 7: Updated chart title --- */}
+                    <h3><TrendingUp /> Long-Term Forecast</h3>
                     <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
                   </div>
                 )}
@@ -456,8 +458,6 @@ export default function App() {
                   </div>
                 )}
                 
-                {/* --- REMOVED: Old 12-month forecast table --- */}
-
                 {analysisData.custom_forecast_data && (
                   <div className="card table-card full-width">
                     <div className="card-header">
@@ -498,9 +498,6 @@ export default function App() {
                   </div>
                 )}
                 
-                {/* --- REMOVED: AI Summary Button and Display Card --- */}
-
-                {/* --- AI Chat Feature --- */}
                 {historicalSummaryText && forecastSummaryText && (
                   <div className="card chat-card full-width">
                     <h3><Sparkles /> Ask the AI Assistant</h3>
@@ -508,7 +505,7 @@ export default function App() {
                       {chatHistory.length === 0 ? (
                         <div className="chat-message-initial">
                           Ask me anything about the reports! <br/>
-                          E.g., "What will sales look like in 2027?"
+                          E.g., "What was the best selling product in 2018?"
                         </div>
                       ) : (
                         chatHistory.map((msg, index) => (
