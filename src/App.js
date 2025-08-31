@@ -4,7 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { BarChart, Droplets, TrendingUp, Download, Loader2, Search, LineChart, PieChart, Send, Sparkles } from 'lucide-react';
 import './App.css';
 
-// Helper function to parse CSV text into an array of objects
+// Helper functions (parseCSV, loadJSZip, formatDateForDisplay, formatDateForAPI) remain the same...
 const parseCSV = (csvText) => {
   if (!csvText || typeof csvText !== 'string') return [];
   const lines = csvText.trim().split('\n');
@@ -19,7 +19,6 @@ const parseCSV = (csvText) => {
   });
 };
 
-// Helper function to dynamically load the JSZip library
 const loadJSZip = () => {
   return new Promise((resolve, reject) => {
     if (window.JSZip) return resolve();
@@ -32,20 +31,18 @@ const loadJSZip = () => {
   });
 };
 
-// Helper function to format dates for display text
 const formatDateForDisplay = (dateString) => {
   if (!dateString) return '';
   const date = new Date(`${dateString}T00:00:00Z`);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 };
 
-// Helper function to format Date objects for the API (YYYY-MM-DD)
 const formatDateForAPI = (date) => {
   if (!date) return null;
   return date.toISOString().split('T')[0];
 };
 
-// Main App component
+
 export default function App() {
   const API_BASE_URL = "https://harideeshab-pharma-sales-api.hf.space";
   
@@ -70,12 +67,11 @@ export default function App() {
   const [zipBlob, setZipBlob] = useState(null);
   const [activeTab, setActiveTab] = useState('historical');
   
-  // --- AI INTEGRATION STATE ---
+  // AI Integration state
   const [userQuestion, setUserQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [isAiChatLoading, setIsAiChatLoading] = useState(false);
   const [forecastDataCsvText, setForecastDataCsvText] = useState('');
-  // --- FIX 1: Add state to hold the historical data for the AI ---
   const [historicalDataCsvText, setHistoricalDataCsvText] = useState('');
 
   useEffect(() => {
@@ -121,7 +117,6 @@ export default function App() {
     setForecastSummaryText('');
     setChatHistory([]);
     setForecastDataCsvText('');
-    // --- FIX 2: Reset the historical data state on new report generation ---
     setHistoricalDataCsvText(''); 
     setZipBlob(null);
     setActiveTab('historical');
@@ -169,7 +164,6 @@ export default function App() {
         } else if (filename.includes('full_forecast_data.csv')) {
           const csvText = await file.async('text');
           setForecastDataCsvText(csvText);
-        // --- FIX 3: Read the new historical_data.csv file from the zip ---
         } else if (filename.includes('historical_data.csv')) {
           const csvText = await file.async('text');
           setHistoricalDataCsvText(csvText);
@@ -218,7 +212,6 @@ export default function App() {
       formData.append('historical_summary', historicalSummaryText);
       formData.append('forecast_summary', forecastSummaryText);
       formData.append('forecast_data_csv', forecastDataCsvText);
-      // --- FIX 4: Append the historical data to the API request ---
       formData.append('historical_data_csv', historicalDataCsvText);
 
       const response = await fetch(`${API_BASE_URL}/ask-ai/`, {
@@ -382,152 +375,70 @@ export default function App() {
           <div className="tab-content">
             {activeTab === 'historical' && (
               <div className="grid">
-                {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && (
-                  <div className="card">
-                    <h3><BarChart /> Overall Historical Sales</h3>
-                    <img src={analysisData[getImagePath('1_overall_sales_summary.png')]} alt="Overall Historical Sales by Product" />
-                  </div>
-                )}
-                {selectedProduct === 'ALL' && analysisData[getImagePath('2_date_range_summary_ALL.png')] && (
-                  <div className="card">
-                    <h3><BarChart /> Sales in Specified Date Range</h3>
-                    <p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p>
-                    <img src={analysisData[getImagePath('2_date_range_summary_ALL.png')]} alt="Sales in Specified Date Range" />
-                  </div>
-                )}
-                {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)] && (
-                  <div className="card">
-                    <h3><BarChart /> Sales in Specified Date Range</h3>
-                    <p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p>
-                    <img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)]} alt="Sales in Specified Date Range" />
-                  </div>
-                )}
-                {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)] && (
-                  <div className="card">
-                    <h3><BarChart /> Sales by Day of Week</h3>
-                    <img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)]} alt="Sales by Day of Week" />
-                  </div>
-                )}
-                {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)] && (
-                  <div className="card">
-                    <h3><BarChart /> Sales by Month</h3>
-                    <img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)]} alt="Sales by Month" />
-                  </div>
-                )}
-                {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)] && (
-                  <div className="card">
-                    <h3><TrendingUp /> Long-Term Sales Trend</h3>
-                    <img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)]} alt="Long-Term Sales Trend" />
-                  </div>
-                )}
-                {historicalSummaryText && (
-                  <div className="card text-card full-width">
-                    <h3><BarChart /> Historical Analysis Summary</h3>
-                    <div className="summary-content">
-                      {renderTextSummary(historicalSummaryText)}
-                    </div>
-                  </div>
-                )}
+                {/* Historical analysis cards... */}
+                {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && <div className="card"><h3><BarChart /> Overall Historical Sales</h3><img src={analysisData[getImagePath('1_overall_sales_summary.png')]} alt="Overall Historical Sales by Product" /></div>}
+                {selectedProduct === 'ALL' && analysisData[getImagePath('2_date_range_summary_ALL.png')] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath('2_date_range_summary_ALL.png')]} alt="Sales in Specified Date Range" /></div>}
+                {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)]} alt="Sales in Specified Date Range" /></div>}
+                {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)] && <div className="card"><h3><BarChart /> Sales by Day of Week</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)]} alt="Sales by Day of Week" /></div>}
+                {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)] && <div className="card"><h3><BarChart /> Sales by Month</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)]} alt="Sales by Month" /></div>}
+                {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)] && <div className="card"><h3><TrendingUp /> Long-Term Sales Trend</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)]} alt="Long-Term Sales Trend" /></div>}
+                {historicalSummaryText && <div className="card text-card full-width"><h3><BarChart /> Historical Analysis Summary</h3><div className="summary-content">{renderTextSummary(historicalSummaryText)}</div></div>}
               </div>
             )}
 
             {activeTab === 'forecast' && (
-              <div className="grid">
-                {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && (
-                  <div className="card full-width">
-                    <h3><TrendingUp /> Long-Term Forecast</h3>
-                    <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
+              // --- CHANGE: Added a new wrapper and CSS class for the two-column layout ---
+              <div className="forecast-layout-grid">
+                {/* Column 1: Main Content */}
+                <div className="main-content-col">
+                  {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width"><h3><TrendingUp /> Long-Term Forecast</h3><img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" /></div>}
+                  <div className="grid"> {/* Nested grid for the two smaller charts */}
+                    {analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)] && <div className="card"><h3><PieChart /> Forecast Components</h3><img src={analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)]} alt="Forecast Components" /></div>}
+                    {analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)] && <div className="card"><h3><LineChart /> Forecast Trend Changepoints</h3><img src={analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)]} alt="Forecast Trend Changepoints" /></div>}
                   </div>
-                )}
-                {analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)] && (
-                  <div className="card">
-                    <h3><PieChart /> Forecast Components</h3>
-                    <img src={analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)]} alt="Forecast Components" />
-                  </div>
-                )}
-                {analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)] && (
-                  <div className="card">
-                    <h3><LineChart /> Forecast Trend Changepoints</h3>
-                    <img src={analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)]} alt="Forecast Trend Changepoints" />
-                  </div>
-                )}
+                  {analysisData.custom_forecast_data && <div className="card table-card full-width"><div className="card-header"><h3>Custom Date Range Forecast</h3><button onClick={() => handleDownload(new Blob([analysisData.custom_forecast_csv_text], { type: 'text/csv;charset=utf-8;' }), `custom_forecast_${selectedProduct}.csv`)}><Download /> Download CSV</button></div><p className="card-subtitle">{formatDateForAPI(forecastFromDate)} to {formatDateForAPI(forecastToDate)}</p><div className="table-wrapper"><table><thead><tr>{analysisData.custom_forecast_data.length > 0 && Object.keys(analysisData.custom_forecast_data[0]).map(key => (<th key={key}>{key}</th>))}</tr></thead><tbody>{analysisData.custom_forecast_data.map((row, i) => (<tr key={i}>{Object.values(row).map((val, j) => (<td key={j}>{typeof val === 'string' && val.includes('-') ? val.split(' ')[0] : val}</td>))}</tr>))}</tbody></table></div></div>}
+                  {forecastSummaryText && <div className="card text-card full-width"><h3><TrendingUp /> Forecast Summary</h3><div className="summary-content">{renderTextSummary(forecastSummaryText)}</div></div>}
+                </div>
                 
-                {analysisData.custom_forecast_data && (
-                  <div className="card table-card full-width">
-                    <div className="card-header">
-                      <h3>Custom Date Range Forecast</h3>
-                      <button onClick={() => handleDownload(new Blob([analysisData.custom_forecast_csv_text], { type: 'text/csv;charset=utf-8;' }), `custom_forecast_${selectedProduct}.csv`)}>
-                        <Download /> Download CSV
-                      </button>
-                    </div>
-                    <p className="card-subtitle">{formatDateForAPI(forecastFromDate)} to {formatDateForAPI(forecastToDate)}</p>
-                    <div className="table-wrapper">
-                      <table>
-                        <thead>
-                          <tr>
-                            {analysisData.custom_forecast_data.length > 0 && Object.keys(analysisData.custom_forecast_data[0]).map(key => (
-                              <th key={key}>{key}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analysisData.custom_forecast_data.map((row, i) => (
-                            <tr key={i}>
-                              {Object.values(row).map((val, j) => (
-                                <td key={j}>{typeof val === 'string' && val.includes('-') ? val.split(' ')[0] : val}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-                {forecastSummaryText && (
-                  <div className="card text-card full-width">
-                    <h3><TrendingUp /> Forecast Summary</h3>
-                    <div className="summary-content">
-                      {renderTextSummary(forecastSummaryText)}
-                    </div>
-                  </div>
-                )}
-                
-                {historicalSummaryText && forecastSummaryText && (
-                  <div className="card chat-card full-width">
-                    <h3><Sparkles /> Ask the AI Assistant</h3>
-                    <div className="chat-container" ref={chatContainerRef}>
-                      {chatHistory.length === 0 ? (
-                        <div className="chat-message-initial">
-                          Ask me anything about the reports! <br/>
-                          E.g., "What was the best selling product in 2018?"
-                        </div>
-                      ) : (
-                        chatHistory.map((msg, index) => (
-                          <div key={index} className={`chat-message ${msg.sender}`}>
-                            {renderTextSummary(msg.text)}
+                {/* Column 2: AI Assistant Sidebar */}
+                <div className="ai-sidebar-col">
+                  {historicalSummaryText && forecastSummaryText && (
+                    <div className="card chat-card full-width">
+                      <h3><Sparkles /> Ask the AI Assistant</h3>
+                      <div className="chat-container" ref={chatContainerRef}>
+                        {chatHistory.length === 0 ? (
+                          <div className="chat-message-initial">
+                            Ask me anything about the reports! <br/>
+                            E.g., "What was the best selling product in 2018?"
                           </div>
-                        ))
-                      )}
-                      {isAiChatLoading && (
-                        <div className="chat-message gemini loading">
-                          <Loader2 className="loader" />
-                        </div>
-                      )}
+                        ) : (
+                          chatHistory.map((msg, index) => (
+                            <div key={index} className={`chat-message ${msg.sender}`}>
+                              {renderTextSummary(msg.text)}
+                            </div>
+                          ))
+                        )}
+                        {isAiChatLoading && (
+                          <div className="chat-message gemini loading">
+                            <Loader2 className="loader" />
+                          </div>
+                        )}
+                      </div>
+                      <form className="chat-input-form" onSubmit={handleAskAI}>
+                        <input
+                          type="text"
+                          value={userQuestion}
+                          onChange={(e) => setUserQuestion(e.target.value)}
+                          placeholder="Ask a question..."
+                          disabled={isAiChatLoading}
+                        />
+                        <button type="submit" disabled={isAiChatLoading || !userQuestion.trim()}>
+                          <Send />
+                        </button>
+                      </form>
                     </div>
-                    <form className="chat-input-form" onSubmit={handleAskAI}>
-                      <input
-                        type="text"
-                        value={userQuestion}
-                        onChange={(e) => setUserQuestion(e.target.value)}
-                        placeholder="Ask a question about the reports..."
-                        disabled={isAiChatLoading}
-                      />
-                      <button type="submit" disabled={isAiChatLoading || !userQuestion.trim()}>
-                        <Send />
-                      </button>
-                    </form>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
