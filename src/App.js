@@ -36,7 +36,8 @@ const loadJSZip = () => {
 const formatDateForDisplay = (dateString) => {
   if (!dateString) return '';
   const date = new Date(`${dateString}T00:00:00Z`);
-  return date.toLocaleDateDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  // --- CORRECTED FUNCTION NAME ---
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 };
 
 // Helper function to format Date objects for the API (YYYY-MM-DD)
