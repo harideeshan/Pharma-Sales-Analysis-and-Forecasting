@@ -70,14 +70,13 @@ export default function App() {
   const [zipBlob, setZipBlob] = useState(null);
   const [activeTab, setActiveTab] = useState('historical');
   
-  // --- MODIFIED STATE FOR AI INTEGRATION ---
+  // --- AI INTEGRATION STATE ---
   const [userQuestion, setUserQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [isAiChatLoading, setIsAiChatLoading] = useState(false);
   const [forecastDataCsvText, setForecastDataCsvText] = useState('');
-  // --- CHANGE 1: Add new state for historical data CSV ---
+  // --- FIX 1: Add state to hold the historical data for the AI ---
   const [historicalDataCsvText, setHistoricalDataCsvText] = useState('');
-
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -104,7 +103,6 @@ export default function App() {
     fetchInitialData();
   }, [API_BASE_URL]);
 
-  // Scroll to the bottom of the chat window when new messages are added
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -121,11 +119,10 @@ export default function App() {
     setAnalysisData(null);
     setHistoricalSummaryText('');
     setForecastSummaryText('');
-    // Reset AI state on new report generation
     setChatHistory([]);
-    setForecastDataCsvText(''); 
-    // --- CHANGE 2: Reset historical data state ---
-    setHistoricalDataCsvText('');
+    setForecastDataCsvText('');
+    // --- FIX 2: Reset the historical data state on new report generation ---
+    setHistoricalDataCsvText(''); 
     setZipBlob(null);
     setActiveTab('historical');
 
@@ -172,7 +169,7 @@ export default function App() {
         } else if (filename.includes('full_forecast_data.csv')) {
           const csvText = await file.async('text');
           setForecastDataCsvText(csvText);
-        // --- CHANGE 3: Read the historical data CSV for the AI ---
+        // --- FIX 3: Read the new historical_data.csv file from the zip ---
         } else if (filename.includes('historical_data.csv')) {
           const csvText = await file.async('text');
           setHistoricalDataCsvText(csvText);
@@ -203,9 +200,8 @@ export default function App() {
     e.preventDefault();
     if (!userQuestion.trim()) return;
 
-    // --- CHANGE 4: Check if BOTH historical and forecast data are ready ---
     if (!forecastDataCsvText || !historicalDataCsvText) {
-        setError("The AI context is not ready yet. Please wait a moment after generating the report and try again.");
+        setError("The AI context is not ready yet. Please wait a moment and try again.");
         return;
     }
 
@@ -222,7 +218,7 @@ export default function App() {
       formData.append('historical_summary', historicalSummaryText);
       formData.append('forecast_summary', forecastSummaryText);
       formData.append('forecast_data_csv', forecastDataCsvText);
-      // --- CHANGE 5: Send the detailed historical data to the backend ---
+      // --- FIX 4: Append the historical data to the API request ---
       formData.append('historical_data_csv', historicalDataCsvText);
 
       const response = await fetch(`${API_BASE_URL}/ask-ai/`, {
@@ -269,7 +265,6 @@ export default function App() {
       <header className="hero">
         <Droplets className="hero-icon" />
         <h1>Pharma Sales Forecaster</h1>
-        {/* --- CHANGE 6: Updated hero description text --- */}
         <p>Select a product to generate a comprehensive sales analysis and a long-term forecast.</p>
         <div className="controls">
           <div className="select-container">
@@ -440,7 +435,6 @@ export default function App() {
               <div className="grid">
                 {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && (
                   <div className="card full-width">
-                    {/* --- CHANGE 7: Updated chart title --- */}
                     <h3><TrendingUp /> Long-Term Forecast</h3>
                     <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
                   </div>
