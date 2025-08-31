@@ -253,6 +253,12 @@ export default function App() {
     return path.replace('.png', '');
   };
 
+  // --- NEW: Create dynamic text for the AI placeholder ---
+  const forecastEndDateText = forecastToDate
+    ? `until ${formatDateForDisplay(formatDateForAPI(forecastToDate))}`
+    : "for the next 2 years";
+
+
   return (
     <div className="app">
       <header className="hero">
@@ -375,7 +381,6 @@ export default function App() {
           <div className="tab-content">
             {activeTab === 'historical' && (
               <div className="grid">
-                {/* Historical analysis cards... */}
                 {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && <div className="card"><h3><BarChart /> Overall Historical Sales</h3><img src={analysisData[getImagePath('1_overall_sales_summary.png')]} alt="Overall Historical Sales by Product" /></div>}
                 {selectedProduct === 'ALL' && analysisData[getImagePath('2_date_range_summary_ALL.png')] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath('2_date_range_summary_ALL.png')]} alt="Sales in Specified Date Range" /></div>}
                 {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)]} alt="Sales in Specified Date Range" /></div>}
@@ -387,12 +392,10 @@ export default function App() {
             )}
 
             {activeTab === 'forecast' && (
-              // --- CHANGE: Added a new wrapper and CSS class for the two-column layout ---
               <div className="forecast-layout-grid">
-                {/* Column 1: Main Content */}
                 <div className="main-content-col">
                   {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width"><h3><TrendingUp /> Long-Term Forecast</h3><img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" /></div>}
-                  <div className="grid"> {/* Nested grid for the two smaller charts */}
+                  <div className="grid">
                     {analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)] && <div className="card"><h3><PieChart /> Forecast Components</h3><img src={analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)]} alt="Forecast Components" /></div>}
                     {analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)] && <div className="card"><h3><LineChart /> Forecast Trend Changepoints</h3><img src={analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)]} alt="Forecast Trend Changepoints" /></div>}
                   </div>
@@ -400,16 +403,24 @@ export default function App() {
                   {forecastSummaryText && <div className="card text-card full-width"><h3><TrendingUp /> Forecast Summary</h3><div className="summary-content">{renderTextSummary(forecastSummaryText)}</div></div>}
                 </div>
                 
-                {/* Column 2: AI Assistant Sidebar */}
                 <div className="ai-sidebar-col">
                   {historicalSummaryText && forecastSummaryText && (
                     <div className="card chat-card full-width">
                       <h3><Sparkles /> Ask the AI Assistant</h3>
                       <div className="chat-container" ref={chatContainerRef}>
                         {chatHistory.length === 0 ? (
+                          // --- CHANGE: Updated initial chat message ---
                           <div className="chat-message-initial">
-                            Ask me anything about the reports! <br/>
-                            E.g., "What was the best selling product in 2018?"
+                            <p><strong>I can answer questions about:</strong></p>
+                            <ul>
+                              <li>Historical sales from 2014 to 2019.</li>
+                              <li>Sales forecasts {forecastEndDateText}.</li>
+                            </ul>
+                            <p><strong>For example, try asking:</strong></p>
+                            <ul>
+                              <li><em>"What was the top product in 2017?"</em></li>
+                              <li><em>"Compare N02BE and M01AE in 2026."</em></li>
+                            </ul>
                           </div>
                         ) : (
                           chatHistory.map((msg, index) => (
