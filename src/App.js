@@ -36,7 +36,7 @@ const loadJSZip = () => {
 const formatDateForDisplay = (dateString) => {
   if (!dateString) return '';
   const date = new Date(`${dateString}T00:00:00Z`);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  return date.toLocaleDateDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 };
 
 // Helper function to format Date objects for the API (YYYY-MM-DD)
@@ -70,12 +70,12 @@ export default function App() {
   const [zipBlob, setZipBlob] = useState(null);
   const [activeTab, setActiveTab] = useState('historical');
   
-  // --- NEW STATE FOR GEMINI INTEGRATION ---
-  const [geminiSummaryText, setGeminiSummaryText] = useState('');
+  // --- MODIFIED STATE FOR AI INTEGRATION ---
   const [userQuestion, setUserQuestion] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
-  const [isGeminiSummaryLoading, setIsGeminiSummaryLoading] = useState(false);
   const [isAiChatLoading, setIsAiChatLoading] = useState(false);
+  // NEW state to hold the forecast data for the AI
+  const [forecastDataCsvText, setForecastDataCsvText] = useState('');
 
 
   useEffect(() => {
@@ -121,8 +121,8 @@ export default function App() {
     setHistoricalSummaryText('');
     setForecastSummaryText('');
     // Reset AI state on new report generation
-    setGeminiSummaryText('');
     setChatHistory([]);
+    setForecastDataCsvText(''); // Reset AI context
     setZipBlob(null);
     setActiveTab('historical');
 
@@ -151,26 +151,26 @@ export default function App() {
       const zip = await window.JSZip.loadAsync(blob);
       const data = {};
 
+      // --- MODIFIED: File processing logic ---
       const filePromises = Object.keys(zip.files).map(async (filename) => {
         const file = zip.files[filename];
         if (filename.endsWith('.png')) {
           const imageBlob = await file.async('blob');
           data[filename.replace('.png', '')] = URL.createObjectURL(imageBlob);
-        } else if (filename.endsWith('.csv')) {
-          if (filename.includes('forecast_12_month')) {
-            const csvText = await file.async('text');
-            data.forecast_data = parseCSV(csvText);
-          } else if (filename.includes('forecast_custom_date')) {
-            const csvText = await file.async('text');
-            data.custom_forecast_data = parseCSV(csvText);
-            data.custom_forecast_csv_text = csvText;
-          }
+        } else if (filename.includes('forecast_custom_date')) {
+          const csvText = await file.async('text');
+          data.custom_forecast_data = parseCSV(csvText);
+          data.custom_forecast_csv_text = csvText;
         } else if (filename.includes('detailed_summary_report.txt')) {
           const textContent = await file.async('text');
           setHistoricalSummaryText(textContent);
         } else if (filename.includes('forecast_summary_report.txt')) {
           const textContent = await file.async('text');
           setForecastSummaryText(textContent);
+        } else if (filename.includes('full_forecast_data.csv')) {
+          // NEW: Capture the full forecast data for the AI chatbot
+          const csvText = await file.async('text');
+          setForecastDataCsvText(csvText);
         }
       });
       await Promise.all(filePromises);
@@ -194,38 +194,17 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
   
-  // --- NEW FUNCTIONS FOR GEMINI INTEGRATION ---
-  const handleGenerateGeminiSummary = async () => {
-    setIsGeminiSummaryLoading(true);
-    setError('');
-    try {
-      const formData = new FormData();
-      formData.append('historical_summary', historicalSummaryText);
-      formData.append('forecast_summary', forecastSummaryText);
-      
-      const response = await fetch(`${API_BASE_URL}/generate-gemini-summary/`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`AI API Error: ${errorData.detail || response.statusText}`);
-      }
-
-      const result = await response.json();
-      setGeminiSummaryText(result.gemini_summary);
-    } catch (err) {
-      console.error(err);
-      setError(`Failed to generate AI summary. ${err.message}`);
-    } finally {
-      setIsGeminiSummaryLoading(false);
-    }
-  };
-  
+  // --- MODIFIED: AI Chat Handler ---
   const handleAskAI = async (e) => {
     e.preventDefault();
     if (!userQuestion.trim()) return;
+
+    // Check if AI context is ready
+    if (!forecastDataCsvText) {
+        setError("The AI context is not ready yet. Please wait a moment after generating the report and try again.");
+        return;
+    }
+
     setIsAiChatLoading(true);
     setError('');
 
@@ -238,15 +217,19 @@ export default function App() {
       formData.append('user_prompt', newUserQuestion);
       formData.append('historical_summary', historicalSummaryText);
       formData.append('forecast_summary', forecastSummaryText);
+      // NEW: Send the detailed forecast data to the backend
+      formData.append('forecast_data_csv', forecastDataCsvText);
 
       const response = await fetch(`${API_BASE_URL}/ask-ai/`, {
         method: 'POST',
         body: formData
       });
 
+      // --- IMPROVED: Error Handling ---
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`AI API Error: ${errorData.detail || response.statusText}`);
+        const errorData = await response.json().catch(() => ({ detail: 'The server returned an invalid error format.' }));
+        const errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+        throw new Error(`AI API Error: ${errorMessage}`);
       }
       
       const result = await response.json();
@@ -254,6 +237,7 @@ export default function App() {
 
     } catch (err) {
       console.error(err);
+      // Display the detailed error in the chat
       setChatHistory(prev => [...prev, { sender: 'gemini', text: `Sorry, I'm unable to answer that right now. ${err.message}` }]);
     } finally {
       setIsAiChatLoading(false);
@@ -282,7 +266,7 @@ export default function App() {
       <header className="hero">
         <Droplets className="hero-icon" />
         <h1>Pharma Sales Forecaster</h1>
-        <p>Select a product to generate a comprehensive sales analysis and a 12-month forecast. Add optional date ranges for more specific insights.</p>
+        <p>Select a product to generate a comprehensive sales analysis and a long-term forecast until 2028.</p>
         <div className="controls">
           <div className="select-container">
             <Search className="search-icon" />
@@ -399,6 +383,7 @@ export default function App() {
           <div className="tab-content">
             {activeTab === 'historical' && (
               <div className="grid">
+                {/* (Historical analysis cards remain the same) */}
                 {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && (
                   <div className="card">
                     <h3><BarChart /> Overall Historical Sales</h3>
@@ -452,8 +437,9 @@ export default function App() {
               <div className="grid">
                 {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && (
                   <div className="card full-width">
-                    <h3><TrendingUp /> 12-Month Forecast</h3>
-                    <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="12-Month Forecast" />
+                    {/* --- MODIFIED: Chart title --- */}
+                    <h3><TrendingUp /> Long-Term Forecast (until 2028)</h3>
+                    <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
                   </div>
                 )}
                 {analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)] && (
@@ -468,31 +454,9 @@ export default function App() {
                     <img src={analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)]} alt="Forecast Trend Changepoints" />
                   </div>
                 )}
-                {analysisData.forecast_data && (
-                  <div className="card table-card full-width">
-                    <h3>Forecast Data (Next 12 Months)</h3>
-                    <div className="table-wrapper">
-                      <table>
-                        <thead>
-                          <tr>
-                            {analysisData.forecast_data?.length > 0 && Object.keys(analysisData.forecast_data[0]).map(key => (
-                              <th key={key}>{key}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analysisData.forecast_data?.map((row, i) => (
-                            <tr key={i}>
-                              {Object.values(row).map((val, j) => (
-                                <td key={j}>{typeof val === 'string' && val.includes('-') ? val.split(' ')[0] : val}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+                
+                {/* --- REMOVED: Old 12-month forecast table --- */}
+
                 {analysisData.custom_forecast_data && (
                   <div className="card table-card full-width">
                     <div className="card-header">
@@ -530,26 +494,12 @@ export default function App() {
                     <div className="summary-content">
                       {renderTextSummary(forecastSummaryText)}
                     </div>
-                    {/* --- NEW: AI Summary Button --- */}
-                    <div className="card-footer">
-                      {historicalSummaryText && forecastSummaryText && !geminiSummaryText && (
-                        <button className="ai-button" onClick={handleGenerateGeminiSummary} disabled={isGeminiSummaryLoading}>
-                          {isGeminiSummaryLoading ? <><Loader2 className="loader" /> Generating...</> : <><Sparkles /> Generate AI Executive Summary</>}
-                        </button>
-                      )}
-                    </div>
                   </div>
                 )}
-                {/* --- NEW: AI Summary Display Card --- */}
-                {geminiSummaryText && (
-                  <div className="card text-card full-width">
-                    <h3><Sparkles /> AI-Powered Executive Summary</h3>
-                    <div className="summary-content">
-                      {renderTextSummary(geminiSummaryText)}
-                    </div>
-                  </div>
-                )}
-                {/* --- NEW: AI Chat Feature --- */}
+                
+                {/* --- REMOVED: AI Summary Button and Display Card --- */}
+
+                {/* --- AI Chat Feature --- */}
                 {historicalSummaryText && forecastSummaryText && (
                   <div className="card chat-card full-width">
                     <h3><Sparkles /> Ask the AI Assistant</h3>
@@ -557,7 +507,7 @@ export default function App() {
                       {chatHistory.length === 0 ? (
                         <div className="chat-message-initial">
                           Ask me anything about the reports! <br/>
-                          E.g., "What are the top strategic recommendations?"
+                          E.g., "What will sales look like in 2027?"
                         </div>
                       ) : (
                         chatHistory.map((msg, index) => (
