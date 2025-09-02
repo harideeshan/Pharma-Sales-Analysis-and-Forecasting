@@ -1,471 +1,446 @@
-import React, { useState, useEffect, useRef } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { BarChart, Droplets, TrendingUp, Download, Loader2, Search, LineChart, PieChart, Send, Sparkles } from 'lucide-react';
-import './App.css';
+/* --- Global Styles & Variables --- */
+:root {
+  --background: #1e293b; /* Dark background */
+  --header-bg: #1e293b;
+  --card-bg: #334155; /* Slightly lighter card background */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --text-dark: #f8fafc; /* Lighter text for dark background */
+  --text-light: #f8fafc;
+  --text-muted: #94a3b8; /* Muted text for dark background */
+  --border-color: #475569; /* Darker border for contrast */
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
 
-// Helper functions (parseCSV, loadJSZip, formatDateForDisplay, formatDateForAPI) remain the same...
-const parseCSV = (csvText) => {
-  if (!csvText || typeof csvText !== 'string') return [];
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.trim());
-  return lines.slice(1).map(line => {
-    const values = line.split(',');
-    return headers.reduce((obj, header, index) => {
-      obj[header] = values[index] ? values[index].trim() : '';
-      return obj;
-    }, {});
-  });
-};
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background);
+  color: var(--text-dark);
+}
 
-const loadJSZip = () => {
-  return new Promise((resolve, reject) => {
-    if (window.JSZip) return resolve();
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load JSZip library.'));
-    document.head.appendChild(script);
-  });
-};
+.app {
+  text-align: center;
+}
 
-const formatDateForDisplay = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(`${dateString}T00:00:00Z`);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-};
+/* --- Hero Header Section --- */
+.hero {
+  background-color: var(--header-bg);
+  color: var(--text-light);
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
 
-const formatDateForAPI = (date) => {
-  if (!date) return null;
-  // Get the year, month, and day from the local time of the Date object
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+.hero-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--primary);
+}
 
+.hero h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
 
-export default function App() {
-  const API_BASE_URL = "https://harideeshab-pharma-sales-api.hf.space";
-  
-  const chatContainerRef = useRef(null);
+.hero p {
+  margin: 0;
+  max-width: 600px;
+  color: #94a3b8;
+  font-size: 1.125rem;
+}
 
-  // State management
-  const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [availableDates, setAvailableDates] = useState({ min: null, max: null });
+/* --- Controls Section --- */
+.controls {
+  margin-top: 24px;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-left: auto;
+  margin-right: auto;
+}
 
-  const [summaryFromDate, setSummaryFromDate] = useState(null);
-  const [summaryToDate, setSummaryToDate] = useState(null);
-  const [forecastFromDate, setForecastFromDate] = useState(null);
-  const [forecastToDate, setForecastToDate] = useState(null);
+.select-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
 
-  // UI state
-  const [analysisData, setAnalysisData] = useState(null);
-  const [historicalSummaryText, setHistoricalSummaryText] = useState('');
-  const [forecastSummaryText, setForecastSummaryText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [zipBlob, setZipBlob] = useState(null);
-  const [activeTab, setActiveTab] = useState('historical');
-  
-  // AI Integration state
-  const [userQuestion, setUserQuestion] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
-  const [isAiChatLoading, setIsAiChatLoading] = useState(false);
-  const [forecastDataCsvText, setForecastDataCsvText] = useState('');
-  const [historicalDataCsvText, setHistoricalDataCsvText] = useState('');
+.select-container .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setError('');
-        const productsResponse = await fetch(`${API_BASE_URL}/products/`);
-        if (!productsResponse.ok) throw new Error('Failed to fetch product list.');
-        const productData = await productsResponse.json();
-        setProducts(productData);
-        if (productData.length > 0) setSelectedProduct(productData[0]);
+.controls select {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background-color: #334155;
+  color: var(--text-light);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.7rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+}
 
-        const datesResponse = await fetch(`${API_BASE_URL}/available-dates/`);
-        if (!datesResponse.ok) throw new Error('Failed to fetch available dates.');
-        const datesData = await datesResponse.json();
-        setAvailableDates({
-          min: new Date(`${datesData.min_available_date}T00:00:00Z`),
-          max: new Date(`${datesData.max_available_date}T00:00:00Z`)
-        });
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      }
-    };
-    fetchInitialData();
-  }, [API_BASE_URL]);
+.controls select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+}
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [chatHistory]);
+.date-controls {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
 
-  const handleGenerateForecast = async () => {
-    if (!selectedProduct) {
-      setError('Please select a product.');
-      return;
-    }
-    setIsLoading(true);
-    setError('');
-    setAnalysisData(null);
-    setHistoricalSummaryText('');
-    setForecastSummaryText('');
-    setChatHistory([]);
-    setForecastDataCsvText('');
-    setHistoricalDataCsvText('');
-    setZipBlob(null);
-    setActiveTab('historical');
+.date-range-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-    try {
-      await loadJSZip();
-      const formData = new FormData();
-      formData.append('product_name', selectedProduct);
+.group-label {
+  font-weight: 500;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  text-align: left;
+}
 
-      if (summaryFromDate) {
-        formData.append('from_date', formatDateForAPI(summaryFromDate));
-      }
-      if (summaryToDate) {
-        formData.append('to_date', formatDateForAPI(summaryToDate));
-      }
-      if (forecastFromDate) {
-        formData.append('forecast_from_date', formatDateForAPI(forecastFromDate));
-      }
-      if (forecastToDate) {
-        formData.append('forecast_to_date', formatDateForAPI(forecastToDate));
-      }
+.date-inputs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-      const response = await fetch(`${API_BASE_URL}/forecast/`, { method: 'POST', body: formData });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`API Error: ${errorData.detail || response.statusText}`);
-      }
+.date-range-group small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: left;
+}
 
-      const blob = await response.blob();
-      setZipBlob(blob);
-      const zip = await window.JSZip.loadAsync(blob);
-      const data = {};
+.generate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--primary);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: auto;
+  align-self: center;
+}
 
-      const filePromises = Object.keys(zip.files).map(async (filename) => {
-        const file = zip.files[filename];
-        if (filename.endsWith('.png')) {
-          const imageBlob = await file.async('blob');
-          data[filename.replace('.png', '')] = URL.createObjectURL(imageBlob);
-        } else if (filename.includes('forecast_custom_date')) {
-          const csvText = await file.async('text');
-          data.custom_forecast_data = parseCSV(csvText);
-          data.custom_forecast_csv_text = csvText;
-        } else if (filename.includes('detailed_summary_report.txt')) {
-          const textContent = await file.async('text');
-          setHistoricalSummaryText(textContent);
-        } else if (filename.includes('forecast_summary_report.txt')) {
-          const textContent = await file.async('text');
-          setForecastSummaryText(textContent);
-        } else if (filename.includes('full_forecast_data.csv')) {
-          const csvText = await file.async('text');
-          setForecastDataCsvText(csvText);
-        } else if (filename.includes('historical_data.csv')) {
-          const csvText = await file.async('text');
-          setHistoricalDataCsvText(csvText);
-        }
-      });
-      await Promise.all(filePromises);
-      setAnalysisData(data);
-    } catch (err) {
-      console.error(err);
-      setError(`Failed to generate forecast. ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+.generate-button:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
 
-  const handleDownload = (blob, filename) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-  
-  const handleAskAI = async (e) => {
-    e.preventDefault();
-    if (!userQuestion.trim()) return;
+.generate-button:disabled {
+  background-color: #475569;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 
-    if (!forecastDataCsvText || !historicalDataCsvText) {
-        setError("The AI context is not ready yet. Please wait a moment and try again.");
-        return;
-    }
+.loader {
+  animation: spin 1s linear infinite;
+}
 
-    setIsAiChatLoading(true);
-    setError('');
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-    const newUserQuestion = userQuestion;
-    setChatHistory(prev => [...prev, { sender: 'user', text: newUserQuestion }]);
-    setUserQuestion('');
+.error {
+  color: #f87171;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ef4444;
+  margin-top: 16px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
-    try {
-      const formData = new FormData();
-      formData.append('user_prompt', newUserQuestion);
-      formData.append('historical_summary', historicalSummaryText);
-      formData.append('forecast_summary', forecastSummaryText);
-      formData.append('forecast_data_csv', forecastDataCsvText);
-      formData.append('historical_data_csv', historicalDataCsvText);
+/* --- Dashboard Section --- */
+.dashboard {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
-      const response = await fetch(`${API_BASE_URL}/ask-ai/`, {
-        method: 'POST',
-        body: formData
-      });
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'The server returned an invalid error format.' }));
-        const errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
-        throw new Error(`AI API Error: ${errorMessage}`);
-      }
-      
-      const result = await response.json();
-      setChatHistory(prev => [...prev, { sender: 'gemini', text: result.gemini_answer }]);
+.dashboard-header h2 {
+  font-size: 1.875rem;
+  margin: 0;
+  color: var(--text-dark);
+}
 
-    } catch (err) {
-      console.error(err);
-      setChatHistory(prev => [...prev, { sender: 'gemini', text: `Sorry, I'm unable to answer that right now. ${err.message}` }]);
-    } finally {
-      setIsAiChatLoading(false);
-    }
-  };
+.dashboard-header h2 span {
+  color: var(--primary);
+}
 
-  const renderTextSummary = (text) => {
-    if (!text) return null;
-    return text.split('\n').map((line, index) => {
-      const parts = line.split(/(\*\*.*?\*\*)/g).map((part, partIndex) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <b key={partIndex}>{part.slice(2, -2)}</b>;
-        }
-        return part;
-      });
-      return <p key={index}>{parts}</p>;
-    });
-  };
+.dashboard-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: var(--card-bg);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
 
-  const getImagePath = (path) => {
-    return path.replace('.png', '');
-  };
+.dashboard-header button:hover {
+  background-color: var(--primary);
+  color: white;
+}
 
-  // --- NEW: Create dynamic text for the AI placeholder ---
-  const forecastEndDateText = forecastToDate
-    ? `until ${formatDateForDisplay(formatDateForAPI(forecastToDate))}`
-    : "for the next 2 years";
+/* --- Grid & Card Styles --- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 24px;
+}
 
+.card {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
 
-  return (
-    <div className="app">
-      <header className="hero">
-        <Droplets className="hero-icon" />
-        <h1>Pharma Sales Forecaster</h1>
-        <p>Select a product to generate a comprehensive sales analysis and a long-term forecast.</p>
-        <div className="controls">
-          <div className="select-container">
-            <Search className="search-icon" />
-            <select
-              value={selectedProduct}
-              onChange={(e) => setSelectedProduct(e.target.value)}
-              disabled={products.length === 0}
-            >
-              {products.length > 0 ? products.map(p => <option key={p} value={p}>{p}</option>) : <option>Loading products...</option>}
-            </select>
-          </div>
-          <div className="date-controls">
-            <div className="date-range-group">
-              <label className="group-label">Historical Sales Summary (Optional)</label>
-              <div className="date-inputs">
-                <DatePicker
-                  selected={summaryFromDate}
-                  onChange={(date) => setSummaryFromDate(date)}
-                  selectsStart
-                  startDate={summaryFromDate}
-                  endDate={summaryToDate}
-                  minDate={availableDates.min}
-                  maxDate={availableDates.max}
-                  placeholderText="From"
-                  dateFormat="yyyy/MMM/dd"
-                  className="date-picker-input"
-                  showYearDropdown
-                  dropdownMode="select"
-                  isClearable
-                />
-                <DatePicker
-                  selected={summaryToDate}
-                  onChange={(date) => setSummaryToDate(date)}
-                  selectsEnd
-                  startDate={summaryFromDate}
-                  endDate={summaryToDate}
-                  minDate={summaryFromDate || availableDates.min}
-                  maxDate={availableDates.max}
-                  placeholderText="To"
-                  dateFormat="yyyy/MMM/dd"
-                  className="date-picker-input"
-                  showYearDropdown
-                  dropdownMode="select"
-                  isClearable
-                />
-              </div>
-              {availableDates.min && <small>Data available from {formatDateForDisplay(availableDates.min.toISOString().split('T')[0])} to {formatDateForDisplay(availableDates.max.toISOString().split('T')[0])}</small>}
-            </div>
-            <div className="date-range-group">
-              <label className="group-label">Custom Date Forecast (Optional)</label>
-              <div className="date-inputs">
-                <DatePicker
-                  selected={forecastFromDate}
-                  onChange={(date) => setForecastFromDate(date)}
-                  selectsStart
-                  startDate={forecastFromDate}
-                  endDate={forecastToDate}
-                  placeholderText="From"
-                  dateFormat="yyyy/MMM/dd"
-                  className="date-picker-input"
-                  showYearDropdown
-                  dropdownMode="select"
-                  isClearable
-                />
-                <DatePicker
-                  selected={forecastToDate}
-                  onChange={(date) => setForecastToDate(date)}
-                  selectsEnd
-                  startDate={forecastFromDate}
-                  endDate={forecastToDate}
-                  minDate={forecastFromDate}
-                  placeholderText="To"
-                  dateFormat="yyyy/MMM/dd"
-                  className="date-picker-input"
-                  showYearDropdown
-                  dropdownMode="select"
-                  isClearable
-                />
-              </div>
-              <small>Select any future date range</small>
-            </div>
-          </div>
-          <button className="generate-button" onClick={handleGenerateForecast} disabled={isLoading || !selectedProduct}>
-            {isLoading ? <><Loader2 className="loader" /> Generating...</> : <><TrendingUp /> Generate Report</>}
-          </button>
-        </div>
-        {error && <p className="error">{error}</p>}
-      </header>
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+}
 
-      {analysisData && (
-        <main className="dashboard">
-          <div className="dashboard-header">
-            <h2>Analysis Report for <span>{selectedProduct}</span></h2>
-            <button onClick={() => handleDownload(zipBlob, `analysis_report_${selectedProduct}.zip`)} disabled={!zipBlob}>
-              <Download /> Download Full Report (.zip)
-            </button>
-          </div>
+.card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  width: 100%;
+  font-size: 1.125rem;
+  color: var(--text-dark);
+}
 
-          <div className="tabs">
-            <button
-              className={`tab-button ${activeTab === 'historical' ? 'active' : ''}`}
-              onClick={() => setActiveTab('historical')}
-            >
-              <BarChart size={16} /> Historical Analysis
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'forecast' ? 'active' : ''}`}
-              onClick={() => setActiveTab('forecast')}
-            >
-              <LineChart size={16} /> Forecast & Predictions
-            </button>
-          </div>
+.card img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  background-color: var(--header-bg);
+}
 
-          <div className="tab-content">
-            {activeTab === 'historical' && (
-              <div className="grid">
-                {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && <div className="card"><h3><BarChart /> Overall Historical Sales</h3><img src={analysisData[getImagePath('1_overall_sales_summary.png')]} alt="Overall Historical Sales by Product" /></div>}
-                {selectedProduct === 'ALL' && analysisData[getImagePath('2_date_range_summary_ALL.png')] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath('2_date_range_summary_ALL.png')]} alt="Sales in Specified Date Range" /></div>}
-                {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)]} alt="Sales in Specified Date Range" /></div>}
-                {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)] && <div className="card"><h3><BarChart /> Sales by Day of Week</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)]} alt="Sales by Day of Week" /></div>}
-                {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)] && <div className="card"><h3><BarChart /> Sales by Month</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)]} alt="Sales by Month" /></div>}
-                {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)] && <div className="card"><h3><TrendingUp /> Long-Term Sales Trend</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)]} alt="Long-Term Sales Trend" /></div>}
-                {historicalSummaryText && <div className="card text-card full-width"><h3><BarChart /> Historical Analysis Summary</h3><div className="summary-content">{renderTextSummary(historicalSummaryText)}</div></div>}
-              </div>
-            )}
+.graph-subtitle {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: -12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
 
-            {activeTab === 'forecast' && (
-              <div className="forecast-layout-grid">
-                <div className="main-content-col">
-                  {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width">
-                      <h3><TrendingUp /> Long-Term Forecast</h3>
-                      <p className="graph-subtitle">Note: Y-axis represents Monthly Sales Volume.</p>
-                      <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
-                    </div>}
-                  <div className="grid">
-                    {analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)] && <div className="card"><h3><PieChart /> Forecast Components</h3><img src={analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)]} alt="Forecast Components" /></div>}
-                    {analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)] && <div className="card"><h3><LineChart /> Forecast Trend Changepoints</h3><img src={analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)]} alt="Forecast Trend Changepoints" /></div>}
-                  </div>
-                  {analysisData.custom_forecast_data && <div className="card table-card full-width"><div className="card-header"><h3>Custom Date Range Forecast</h3><button onClick={() => handleDownload(new Blob([analysisData.custom_forecast_csv_text], { type: 'text/csv;charset=utf-8;' }), `custom_forecast_${selectedProduct}.csv`)}><Download /> Download CSV</button></div><p className="card-subtitle">{formatDateForAPI(forecastFromDate)} to {formatDateForAPI(forecastToDate)}</p><div className="table-wrapper"><table><thead><tr>{analysisData.custom_forecast_data.length > 0 && Object.keys(analysisData.custom_forecast_data[0]).map(key => (<th key={key}>{key}</th>))}</tr></thead><tbody>{analysisData.custom_forecast_data.map((row, i) => (<tr key={i}>{Object.values(row).map((val, j) => (<td key={j}>{typeof val === 'string' && val.includes('-') ? val.split(' ')[0] : val}</td>))}</tr>))}</tbody></table></div></div>}
-                  {forecastSummaryText && <div className="card text-card full-width"><h3><TrendingUp /> Forecast Summary</h3><div className="summary-content">{renderTextSummary(forecastSummaryText)}</div></div>}
-                </div>
-                
-                <div className="ai-sidebar-col">
-                  {historicalSummaryText && forecastSummaryText && (
-                    <div className="card chat-card full-width">
-                      <h3><Sparkles /> Ask the AI Assistant</h3>
-                      <div className="chat-container" ref={chatContainerRef}>
-                        {chatHistory.length === 0 ? (
-                          <div className="chat-message-initial">
-                            <p><strong>I can answer questions about:</strong></p>
-                            <ul>
-                              <li>Historical sales from 2014 to 2019.</li>
-                              <li>Sales forecasts {forecastEndDateText}.</li>
-                            </ul>
-                            <p><strong>For example, try asking:</strong></p>
-                            <ul>
-                              <li><em>"What was the top product in 2017?"</em></li>
-                              <li><em>"Compare N02BE and M01AE in 2026."</em></li>
-                            </ul>
-                          </div>
-                        ) : (
-                          chatHistory.map((msg, index) => (
-                            <div key={index} className={`chat-message ${msg.sender}`}>
-                              {renderTextSummary(msg.text)}
-                            </div>
-                          ))
-                        )}
-                        {isAiChatLoading && (
-                          <div className="chat-message gemini loading">
-                            <Loader2 className="loader" />
-                          </div>
-                        )}
-                      </div>
-                      <form className="chat-input-form" onSubmit={handleAskAI}>
-                        <input
-                          type="text"
-                          value={userQuestion}
-                          onChange={(e) => setUserQuestion(e.target.value)}
-                          placeholder="Ask a question..."
-                          disabled={isAiChatLoading}
-                        />
-                        <button type="submit" disabled={isAiChatLoading || !userQuestion.trim()}>
-                          <Send />
-                        </button>
-                      </form>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </main>
-      )}
-    </div>
-  );
+.card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-header{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:8px}.card-header h3{margin-bottom:0}.card-header button{padding:6px 12px;font-size:.875rem;background-color:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background-color .2s}.card-header button:hover{background-color:var(--primary-hover)}.card-subtitle{width:100%;text-align:left;margin:-8px 0 12px 0;font-size:.9rem;color:var(--text-muted)}.table-card{align-items:flex-start}.table-wrapper{width:100%;overflow-x:auto;border:1px solid var(--border-color);border-radius:8px;max-height:400px}table{width:100%;border-collapse:collapse}th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border-color)}thead th{background-color:#2a3648;font-weight:600;font-size:.875rem;position:sticky;top:0;z-index:1;color:var(--text-light)}tbody tr:nth-child(even){background-color:#2f3b4f}tbody tr:hover{background-color:#394a61}
+
+/* --- React-DatePicker Custom Styles --- */
+.react-datepicker-wrapper {
+  /* Fixes the datepicker input to be full width within its flex container */
+  width: 100%;
+}
+.react-datepicker-wrapper input {
+  background-color: #334155;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+}
+
+.react-datepicker-popper {
+  z-index: 1000;
+}
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #475569 !important;
+  background-color: #1e293b !important;
+  border-radius: 8px !important;
+}
+.react-datepicker__header {
+  background-color: #334155 !important;
+  border-bottom: 1px solid #475569 !important;
+}
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: var(--text-light) !important;
+}
+.react-datepicker__day-name {
+  color: #94a3b8 !important;
+  font-weight: 500;
+}
+.react-datepicker__day {
+  color: #e2e8f0 !important;
+  transition: background-color .2s;
+}
+.react-datepicker__day:hover {
+  background-color: #475569 !important;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--primary-hover) !important;
+}
+.react-datepicker__day--disabled {
+  color: #64748b !important;
+  cursor: not-allowed;
+}
+.react-datepicker__navigation-icon::before {
+  border-color: #94a3b8 !important;
+}
+.react-datepicker__triangle::before,
+.react-datepicker__triangle::after {
+  display: none !important;
+}
+.react-datepicker__year-select {
+  background-color: #475569;
+  color: white;
+  border: 1px solid #64748b;
+  border-radius: 4px;
+}
+
+/* --- Tab Layout Styles --- */
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 24px;
+}
+.tab-button {
+  padding: 12px 20px;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transform: translateY(2px);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab-button:hover { color: var(--text-dark); }
+.tab-button.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.tab-content {
+  padding-top: 16px;
+}
+
+/* --- Text Summary & AI Chat Styles --- */
+.card.text-card{align-items:flex-start;padding:24px;text-align:left}.card.text-card p{line-height:1.6;font-size:1rem;margin:4px 0;color:var(--text-dark)}.card.text-card b{color:var(--primary)}.summary-content{width:100%}.card-footer{padding-top:1.5rem;margin-top:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;width:100%}.ai-button{background:linear-gradient(145deg,#6d28d9,#4c1d95);color:white;border:none;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;transition:all .2s ease-in-out;box-shadow:0 4px 6px rgba(0,0,0,.1)}.ai-button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 7px 14px rgba(0,0,0,.1)}.ai-button:disabled{opacity:.6;cursor:not-allowed}.chat-card{display:flex;flex-direction:column}.chat-container{background-color:#2a3648;border:1px solid #475569;border-radius:8px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem}.chat-message{padding:.75rem 1rem;border-radius:12px;max-width:80%;line-height:1.5;word-wrap:break-word}.chat-message p{margin:0;padding:0}.chat-message.user{background-color:#3b82f6;color:white;align-self:flex-end;border-bottom-right-radius:2px}.chat-message.gemini{background-color:#475569;color:var(--text-light);align-self:flex-start;border-bottom-left-radius:2px}.chat-message.gemini b{color:#94a3b8}
+.chat-message-initial{margin:auto;text-align:left;color:var(--text-muted);font-size:.9rem;padding:0 1rem}.chat-message-initial p{margin:0 0 .5rem 0}.chat-message-initial ul{margin:0 0 1rem 0;padding-left:1.25rem}.chat-message-initial li{margin-bottom:.25rem}
+.chat-message.loading{display:flex;align-items:center;justify-content:center;padding:.75rem;align-self:flex-start;background-color:#475569;width:60px}.chat-input-form{display:flex;gap:.5rem}.chat-input-form input{flex-grow:1;border:1px solid #475569;border-radius:8px;padding:.75rem;font-size:1rem;transition:border-color .2s,box-shadow .2s;background-color:#1e293b;color:var(--text-light)}.chat-input-form input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(79,70,229,.2)}.chat-input-form button{border:none;background-color:var(--primary);color:white;padding:.5rem 1rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background-color .2s}.chat-input-form button:hover:not(:disabled){background-color:var(--primary-hover)}.chat-input-form button:disabled{background-color:#a5b4fc;cursor:not-allowed}
+
+/*
+ =========================================
+  STYLES FOR FORECAST LAYOUT
+ =========================================
+*/
+.forecast-layout-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.main-content-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ai-sidebar-col {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 24px;
+}
+
+/* On smaller screens, stack the columns */
+@media (max-width: 1024px) {
+  .forecast-layout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-sidebar-col {
+    position: static;
+  }
 }
