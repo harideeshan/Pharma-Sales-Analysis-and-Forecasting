@@ -37,15 +37,15 @@ const formatDateForDisplay = (dateString) => {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 };
 
-// --- CORRECTED `formatDateForAPI` FUNCTION ---
-// This function now formats the date using local values to avoid timezone issues.
 const formatDateForAPI = (date) => {
-  if (!date) return null;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  if (!date) return null;
+  // Get the year, month, and day from the local time of the Date object
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
+
 
 export default function App() {
   const API_BASE_URL = "https://harideeshab-pharma-sales-api.hf.space";
@@ -109,86 +109,83 @@ export default function App() {
     }
   }, [chatHistory]);
 
-
-const handleGenerateForecast = async () => {
-  if (!selectedProduct) {
-    setError('Please select a product.');
-    return;
-  }
-  setIsLoading(true);
-  setError('');
-  setAnalysisData(null);
-  setHistoricalSummaryText('');
-  setForecastSummaryText('');
-  setChatHistory([]);
-  setForecastDataCsvText('');
-  setHistoricalDataCsvText('');
-  setZipBlob(null);
-  setActiveTab('historical');
-
-  try {
-    await loadJSZip();
-    const formData = new FormData();
-    formData.append('product_name', selectedProduct);
-    
-    // The key change from the previous response is already incorporated here.
-    // This ensures only valid dates are sent to the backend.
-    if (summaryFromDate) {
-      formData.append('from_date', formatDateForAPI(summaryFromDate));
+  const handleGenerateForecast = async () => {
+    if (!selectedProduct) {
+      setError('Please select a product.');
+      return;
     }
-    if (summaryToDate) {
-      formData.append('to_date', formatDateForAPI(summaryToDate));
-    }
-    if (forecastFromDate) {
-      formData.append('forecast_from_date', formatDateForAPI(forecastFromDate));
-    }
-    if (forecastToDate) {
-      formData.append('forecast_to_date', formatDateForAPI(forecastToDate));
-    }
+    setIsLoading(true);
+    setError('');
+    setAnalysisData(null);
+    setHistoricalSummaryText('');
+    setForecastSummaryText('');
+    setChatHistory([]);
+    setForecastDataCsvText('');
+    setHistoricalDataCsvText('');
+    setZipBlob(null);
+    setActiveTab('historical');
 
-    const response = await fetch(`${API_BASE_URL}/forecast/`, { method: 'POST', body: formData });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API Error: ${errorData.detail || response.statusText}`);
-    }
+    try {
+      await loadJSZip();
+      const formData = new FormData();
+      formData.append('product_name', selectedProduct);
 
-    const blob = await response.blob();
-    setZipBlob(blob);
-    const zip = await window.JSZip.loadAsync(blob);
-    const data = {};
-
-    const filePromises = Object.keys(zip.files).map(async (filename) => {
-      const file = zip.files[filename];
-      if (filename.endsWith('.png')) {
-        const imageBlob = await file.async('blob');
-        data[filename.replace('.png', '')] = URL.createObjectURL(imageBlob);
-      } else if (filename.includes('forecast_custom_date')) {
-        const csvText = await file.async('text');
-        data.custom_forecast_data = parseCSV(csvText);
-        data.custom_forecast_csv_text = csvText;
-      } else if (filename.includes('detailed_summary_report.txt')) {
-        const textContent = await file.async('text');
-        setHistoricalSummaryText(textContent);
-      } else if (filename.includes('forecast_summary_report.txt')) {
-        const textContent = await file.async('text');
-        setForecastSummaryText(textContent);
-      } else if (filename.includes('full_forecast_data.csv')) {
-        const csvText = await file.async('text');
-        setForecastDataCsvText(csvText);
-      } else if (filename.includes('historical_data.csv')) {
-        const csvText = await file.async('text');
-        setHistoricalDataCsvText(csvText);
+      if (summaryFromDate) {
+        formData.append('from_date', formatDateForAPI(summaryFromDate));
       }
-    });
-    await Promise.all(filePromises);
-    setAnalysisData(data);
-  } catch (err) {
-    console.error(err);
-    setError(`Failed to generate forecast. ${err.message}`);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      if (summaryToDate) {
+        formData.append('to_date', formatDateForAPI(summaryToDate));
+      }
+      if (forecastFromDate) {
+        formData.append('forecast_from_date', formatDateForAPI(forecastFromDate));
+      }
+      if (forecastToDate) {
+        formData.append('forecast_to_date', formatDateForAPI(forecastToDate));
+      }
+
+      const response = await fetch(`${API_BASE_URL}/forecast/`, { method: 'POST', body: formData });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`API Error: ${errorData.detail || response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      setZipBlob(blob);
+      const zip = await window.JSZip.loadAsync(blob);
+      const data = {};
+
+      const filePromises = Object.keys(zip.files).map(async (filename) => {
+        const file = zip.files[filename];
+        if (filename.endsWith('.png')) {
+          const imageBlob = await file.async('blob');
+          data[filename.replace('.png', '')] = URL.createObjectURL(imageBlob);
+        } else if (filename.includes('forecast_custom_date')) {
+          const csvText = await file.async('text');
+          data.custom_forecast_data = parseCSV(csvText);
+          data.custom_forecast_csv_text = csvText;
+        } else if (filename.includes('detailed_summary_report.txt')) {
+          const textContent = await file.async('text');
+          setHistoricalSummaryText(textContent);
+        } else if (filename.includes('forecast_summary_report.txt')) {
+          const textContent = await file.async('text');
+          setForecastSummaryText(textContent);
+        } else if (filename.includes('full_forecast_data.csv')) {
+          const csvText = await file.async('text');
+          setForecastDataCsvText(csvText);
+        } else if (filename.includes('historical_data.csv')) {
+          const csvText = await file.async('text');
+          setHistoricalDataCsvText(csvText);
+        }
+      });
+      await Promise.all(filePromises);
+      setAnalysisData(data);
+    } catch (err) {
+      console.error(err);
+      setError(`Failed to generate forecast. ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
@@ -264,7 +261,6 @@ const handleGenerateForecast = async () => {
     return path.replace('.png', '');
   };
 
-  // --- NEW: Create dynamic text for the AI placeholder ---
   const forecastEndDateText = forecastToDate
     ? `until ${formatDateForDisplay(formatDateForAPI(forecastToDate))}`
     : "for the next 2 years";
@@ -372,7 +368,6 @@ const handleGenerateForecast = async () => {
             <button onClick={() => handleDownload(zipBlob, `analysis_report_${selectedProduct}.zip`)} disabled={!zipBlob}>
               <Download /> Download Full Report (.zip)
             </button>
-            <a className="view-pdf-link" href="#" target="_blank">View Report as PDF (Coming Soon)</a>
           </div>
 
           <div className="tabs">
@@ -406,7 +401,12 @@ const handleGenerateForecast = async () => {
             {activeTab === 'forecast' && (
               <div className="forecast-layout-grid">
                 <div className="main-content-col">
-                  {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width"><h3><TrendingUp /> Long-Term Forecast</h3><img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" /></div>}
+                  {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width">
+                      <h3><TrendingUp /> Long-Term Forecast</h3>
+                      {/* --- ADDED LINE: Explains the Y-axis --- */}
+                      <p className="graph-subtitle">Note: Y-axis represents Monthly Sales Volume.</p>
+                      <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
+                    </div>}
                   <div className="grid">
                     {analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)] && <div className="card"><h3><PieChart /> Forecast Components</h3><img src={analysisData[getImagePath(`forecast_components_${selectedProduct}.png`)]} alt="Forecast Components" /></div>}
                     {analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)] && <div className="card"><h3><LineChart /> Forecast Trend Changepoints</h3><img src={analysisData[getImagePath(`forecast_trend_changes_${selectedProduct}.png`)]} alt="Forecast Trend Changepoints" /></div>}
@@ -421,7 +421,6 @@ const handleGenerateForecast = async () => {
                       <h3><Sparkles /> Ask the AI Assistant</h3>
                       <div className="chat-container" ref={chatContainerRef}>
                         {chatHistory.length === 0 ? (
-                          // --- CHANGE: Updated initial chat message ---
                           <div className="chat-message-initial">
                             <p><strong>I can answer questions about:</strong></p>
                             <ul>
