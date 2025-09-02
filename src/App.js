@@ -105,79 +105,91 @@ export default function App() {
     }
   }, [chatHistory]);
 
-  const handleGenerateForecast = async () => {
-    if (!selectedProduct) {
-      setError('Please select a product.');
-      return;
+  // ... (rest of the code remains the same)
+
+const handleGenerateForecast = async () => {
+  if (!selectedProduct) {
+    setError('Please select a product.');
+    return;
+  }
+  setIsLoading(true);
+  setError('');
+  setAnalysisData(null);
+  setHistoricalSummaryText('');
+  setForecastSummaryText('');
+  setChatHistory([]);
+  setForecastDataCsvText('');
+  setHistoricalDataCsvText('');
+  setZipBlob(null);
+  setActiveTab('historical');
+
+  try {
+    await loadJSZip();
+    const formData = new FormData();
+    formData.append('product_name', selectedProduct);
+
+    // --- ONLY NECESSARY CHANGE ---
+    // Change 1: Explicitly check for null values before appending to FormData
+    // This ensures empty date pickers don't send an invalid string like "null" or ""
+    if (summaryFromDate) {
+      formData.append('from_date', formatDateForAPI(summaryFromDate));
     }
-    setIsLoading(true);
-    setError('');
-    setAnalysisData(null);
-    setHistoricalSummaryText('');
-    setForecastSummaryText('');
-    setChatHistory([]);
-    setForecastDataCsvText('');
-    setHistoricalDataCsvText(''); 
-    setZipBlob(null);
-    setActiveTab('historical');
-
-    try {
-      await loadJSZip();
-      const formData = new FormData();
-      formData.append('product_name', selectedProduct);
-
-      if (summaryFromDate && summaryToDate) {
-        formData.append('from_date', formatDateForAPI(summaryFromDate));
-        formData.append('to_date', formatDateForAPI(summaryToDate));
-      }
-      if (forecastFromDate && forecastToDate) {
-        formData.append('forecast_from_date', formatDateForAPI(forecastFromDate));
-        formData.append('forecast_to_date', formatDateForAPI(forecastToDate));
-      }
-
-      const response = await fetch(`${API_BASE_URL}/forecast/`, { method: 'POST', body: formData });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`API Error: ${errorData.detail || response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      setZipBlob(blob);
-      const zip = await window.JSZip.loadAsync(blob);
-      const data = {};
-
-      const filePromises = Object.keys(zip.files).map(async (filename) => {
-        const file = zip.files[filename];
-        if (filename.endsWith('.png')) {
-          const imageBlob = await file.async('blob');
-          data[filename.replace('.png', '')] = URL.createObjectURL(imageBlob);
-        } else if (filename.includes('forecast_custom_date')) {
-          const csvText = await file.async('text');
-          data.custom_forecast_data = parseCSV(csvText);
-          data.custom_forecast_csv_text = csvText;
-        } else if (filename.includes('detailed_summary_report.txt')) {
-          const textContent = await file.async('text');
-          setHistoricalSummaryText(textContent);
-        } else if (filename.includes('forecast_summary_report.txt')) {
-          const textContent = await file.async('text');
-          setForecastSummaryText(textContent);
-        } else if (filename.includes('full_forecast_data.csv')) {
-          const csvText = await file.async('text');
-          setForecastDataCsvText(csvText);
-        } else if (filename.includes('historical_data.csv')) {
-          const csvText = await file.async('text');
-          setHistoricalDataCsvText(csvText);
-        }
-      });
-      await Promise.all(filePromises);
-      setAnalysisData(data);
-    } catch (err) {
-      console.error(err);
-      setError(`Failed to generate forecast. ${err.message}`);
-    } finally {
-      setIsLoading(false);
+    if (summaryToDate) {
+      formData.append('to_date', formatDateForAPI(summaryToDate));
     }
-  };
+    if (forecastFromDate) {
+      formData.append('forecast_from_date', formatDateForAPI(forecastFromDate));
+    }
+    if (forecastToDate) {
+      formData.append('forecast_to_date', formatDateForAPI(forecastToDate));
+    }
+    // --- END OF CHANGE ---
+
+    const response = await fetch(`${API_BASE_URL}/forecast/`, { method: 'POST', body: formData });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API Error: ${errorData.detail || response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    setZipBlob(blob);
+    const zip = await window.JSZip.loadAsync(blob);
+    const data = {};
+
+    const filePromises = Object.keys(zip.files).map(async (filename) => {
+      const file = zip.files[filename];
+      if (filename.endsWith('.png')) {
+        const imageBlob = await file.async('blob');
+        data[filename.replace('.png', '')] = URL.createObjectURL(imageBlob);
+      } else if (filename.includes('forecast_custom_date')) {
+        const csvText = await file.async('text');
+        data.custom_forecast_data = parseCSV(csvText);
+        data.custom_forecast_csv_text = csvText;
+      } else if (filename.includes('detailed_summary_report.txt')) {
+        const textContent = await file.async('text');
+        setHistoricalSummaryText(textContent);
+      } else if (filename.includes('forecast_summary_report.txt')) {
+        const textContent = await file.async('text');
+        setForecastSummaryText(textContent);
+      } else if (filename.includes('full_forecast_data.csv')) {
+        const csvText = await file.async('text');
+        setForecastDataCsvText(csvText);
+      } else if (filename.includes('historical_data.csv')) {
+        const csvText = await file.async('text');
+        setHistoricalDataCsvText(csvText);
+      }
+    });
+    await Promise.all(filePromises);
+    setAnalysisData(data);
+  } catch (err) {
+    console.error(err);
+    setError(`Failed to generate forecast. ${err.message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// ... (rest of the code remains the same)
 
   const handleDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
