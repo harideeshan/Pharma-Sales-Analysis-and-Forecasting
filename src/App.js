@@ -261,6 +261,7 @@ export default function App() {
     return path.replace('.png', '');
   };
 
+  // --- NEW: Create dynamic text for the AI placeholder ---
   const forecastEndDateText = forecastToDate
     ? `until ${formatDateForDisplay(formatDateForAPI(forecastToDate))}`
     : "for the next 2 years";
@@ -403,7 +404,6 @@ export default function App() {
                 <div className="main-content-col">
                   {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width">
                       <h3><TrendingUp /> Long-Term Forecast</h3>
-                      {/* --- ADDED LINE: Explains the Y-axis --- */}
                       <p className="graph-subtitle">Note: Y-axis represents Monthly Sales Volume.</p>
                       <img src={analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)]} alt="Long-Term Forecast" />
                     </div>}
