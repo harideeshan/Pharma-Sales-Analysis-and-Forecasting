@@ -66,7 +66,6 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [zipBlob, setZipBlob] = useState(null);
-    const [activeTab, setActiveTab] = useState('historical');
 
     // AI Integration state
     const [userQuestion, setUserQuestion] = useState('');
@@ -120,7 +119,6 @@ export default function App() {
         setForecastDataCsvText('');
         setHistoricalDataCsvText('');
         setZipBlob(null);
-        setActiveTab('historical');
 
         try {
             await loadJSZip();
@@ -265,140 +263,132 @@ export default function App() {
 
     return (
         <div className="app-container">
-            <header className="header">
-                <div className="title-section">
-                    <Droplets className="header-icon" />
-                    <h1>Pharma Sales Forecaster</h1>
-                    <p>Generate a comprehensive analysis and forecast for any product.</p>
-                </div>
-                <div className="controls">
-                    <div className="select-container">
-                        <Search className="search-icon" />
-                        <select
-                            value={selectedProduct}
-                            onChange={(e) => setSelectedProduct(e.target.value)}
-                            disabled={products.length === 0}
-                        >
-                            {products.length > 0 ? products.map(p => <option key={p} value={p}>{p}</option>) : <option>Loading products...</option>}
-                        </select>
-                    </div>
-                    <div className="date-controls">
-                        <div className="date-range-group">
-                            <label className="group-label">Historical Sales (Optional)</label>
-                            <div className="date-inputs">
-                                <DatePicker
-                                    selected={summaryFromDate}
-                                    onChange={(date) => setSummaryFromDate(date)}
-                                    selectsStart
-                                    startDate={summaryFromDate}
-                                    endDate={summaryToDate}
-                                    minDate={availableDates.min}
-                                    maxDate={availableDates.max}
-                                    placeholderText="From"
-                                    dateFormat="yyyy/MMM/dd"
-                                    className="date-picker-input"
-                                    showYearDropdown
-                                    dropdownMode="select"
-                                    isClearable
-                                />
-                                <DatePicker
-                                    selected={summaryToDate}
-                                    onChange={(date) => setSummaryToDate(date)}
-                                    selectsEnd
-                                    startDate={summaryFromDate}
-                                    endDate={summaryToDate}
-                                    minDate={summaryFromDate || availableDates.min}
-                                    maxDate={availableDates.max}
-                                    placeholderText="To"
-                                    dateFormat="yyyy/MMM/dd"
-                                    className="date-picker-input"
-                                    showYearDropdown
-                                    dropdownMode="select"
-                                    isClearable
-                                />
+            {!analysisData ? (
+                // Input Page
+                <main className="input-page">
+                    <header className="page-header">
+                        <Droplets className="header-icon" />
+                        <h1>Pharma Sales Forecaster</h1>
+                        <p>Generate a comprehensive analysis and forecast for any product.</p>
+                    </header>
+                    <div className="card input-card">
+                        <div className="controls">
+                            <div className="select-container">
+                                <Search className="search-icon" />
+                                <select
+                                    value={selectedProduct}
+                                    onChange={(e) => setSelectedProduct(e.target.value)}
+                                    disabled={products.length === 0}
+                                >
+                                    {products.length > 0 ? products.map(p => <option key={p} value={p}>{p}</option>) : <option>Loading products...</option>}
+                                </select>
                             </div>
-                            {availableDates.min && <small>Data: {formatDateForDisplay(availableDates.min.toISOString().split('T')[0])} to {formatDateForDisplay(availableDates.max.toISOString().split('T')[0])}</small>}
-                        </div>
-                        <div className="date-range-group">
-                            <label className="group-label">Custom Forecast (Optional)</label>
-                            <div className="date-inputs">
-                                <DatePicker
-                                    selected={forecastFromDate}
-                                    onChange={(date) => setForecastFromDate(date)}
-                                    selectsStart
-                                    startDate={forecastFromDate}
-                                    endDate={forecastToDate}
-                                    placeholderText="From"
-                                    dateFormat="yyyy/MMM/dd"
-                                    className="date-picker-input"
-                                    showYearDropdown
-                                    dropdownMode="select"
-                                    isClearable
-                                />
-                                <DatePicker
-                                    selected={forecastToDate}
-                                    onChange={(date) => setForecastToDate(date)}
-                                    selectsEnd
-                                    startDate={forecastFromDate}
-                                    endDate={forecastToDate}
-                                    minDate={forecastFromDate}
-                                    placeholderText="To"
-                                    dateFormat="yyyy/MMM/dd"
-                                    className="date-picker-input"
-                                    showYearDropdown
-                                    dropdownMode="select"
-                                    isClearable
-                                />
+                            <div className="date-controls">
+                                <div className="date-range-group">
+                                    <label className="group-label">Historical Sales (Optional)</label>
+                                    <div className="date-inputs">
+                                        <DatePicker
+                                            selected={summaryFromDate}
+                                            onChange={(date) => setSummaryFromDate(date)}
+                                            selectsStart
+                                            startDate={summaryFromDate}
+                                            endDate={summaryToDate}
+                                            minDate={availableDates.min}
+                                            maxDate={availableDates.max}
+                                            placeholderText="From"
+                                            dateFormat="yyyy/MMM/dd"
+                                            className="date-picker-input"
+                                            showYearDropdown
+                                            dropdownMode="select"
+                                            isClearable
+                                        />
+                                        <DatePicker
+                                            selected={summaryToDate}
+                                            onChange={(date) => setSummaryToDate(date)}
+                                            selectsEnd
+                                            startDate={summaryFromDate}
+                                            endDate={summaryToDate}
+                                            minDate={summaryFromDate || availableDates.min}
+                                            maxDate={availableDates.max}
+                                            placeholderText="To"
+                                            dateFormat="yyyy/MMM/dd"
+                                            className="date-picker-input"
+                                            showYearDropdown
+                                            dropdownMode="select"
+                                            isClearable
+                                        />
+                                    </div>
+                                    {availableDates.min && <small>Data: {formatDateForDisplay(availableDates.min.toISOString().split('T')[0])} to {formatDateForDisplay(availableDates.max.toISOString().split('T')[0])}</small>}
+                                </div>
+                                <div className="date-range-group">
+                                    <label className="group-label">Custom Forecast (Optional)</label>
+                                    <div className="date-inputs">
+                                        <DatePicker
+                                            selected={forecastFromDate}
+                                            onChange={(date) => setForecastFromDate(date)}
+                                            selectsStart
+                                            startDate={forecastFromDate}
+                                            endDate={forecastToDate}
+                                            placeholderText="From"
+                                            dateFormat="yyyy/MMM/dd"
+                                            className="date-picker-input"
+                                            showYearDropdown
+                                            dropdownMode="select"
+                                            isClearable
+                                        />
+                                        <DatePicker
+                                            selected={forecastToDate}
+                                            onChange={(date) => setForecastToDate(date)}
+                                            selectsEnd
+                                            startDate={forecastFromDate}
+                                            endDate={forecastToDate}
+                                            minDate={forecastFromDate}
+                                            placeholderText="To"
+                                            dateFormat="yyyy/MMM/dd"
+                                            className="date-picker-input"
+                                            showYearDropdown
+                                            dropdownMode="select"
+                                            isClearable
+                                        />
+                                    </div>
+                                    <small>Select any future date range</small>
+                                </div>
                             </div>
-                            <small>Select any future date range</small>
+                            <button className="generate-button" onClick={handleGenerateForecast} disabled={isLoading || !selectedProduct}>
+                                {isLoading ? <><Loader2 className="loader" /> Generating...</> : <><TrendingUp /> Generate Report</>}
+                            </button>
                         </div>
+                        {error && <p className="error">{error}</p>}
                     </div>
-                    <button className="generate-button" onClick={handleGenerateForecast} disabled={isLoading || !selectedProduct}>
-                        {isLoading ? <><Loader2 className="loader" /> Generating...</> : <><TrendingUp /> Generate Report</>}
-                    </button>
-                </div>
-                {error && <p className="error">{error}</p>}
-            </header>
-
-            {analysisData ? (
-                <main className="main-dashboard">
-                    <div className="analysis-column">
-                        <div className="dashboard-header">
-                            <h2>Analysis Report for <span>{selectedProduct}</span></h2>
+                </main>
+            ) : (
+                // Analysis Page
+                <main className="analysis-page">
+                    <header className="page-header analysis-header">
+                        <div className="header-content">
+                            <h1 className="report-title">Analysis Report for <span className="highlight">{selectedProduct}</span></h1>
                             <button className="download-button" onClick={() => handleDownload(zipBlob, `analysis_report_${selectedProduct}.zip`)} disabled={!zipBlob}>
                                 <Download /> Download Full Report
                             </button>
                         </div>
+                    </header>
 
-                        <div className="tabs">
-                            <button
-                                className={`tab-button ${activeTab === 'historical' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('historical')}
-                            >
-                                <BarChart size={16} /> Historical Analysis
-                            </button>
-                            <button
-                                className={`tab-button ${activeTab === 'forecast' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('forecast')}
-                            >
-                                <LineChart size={16} /> Forecast & Predictions
-                            </button>
-                        </div>
-
-                        <div className="tab-content">
-                            {activeTab === 'historical' && (
+                    <div className="dashboard-content">
+                        <div className="analysis-column">
+                            <div className="analysis-section">
+                                <h2 className="section-title"><BarChart /> Historical Sales Analysis</h2>
+                                <p className="section-subtitle">A detailed look at past sales performance and trends.</p>
                                 <div className="historical-grid">
-                                    {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && <div className="card"><h3><BarChart /> Overall Historical Sales</h3><img src={analysisData[getImagePath('1_overall_sales_summary.png')]} alt="Overall Historical Sales by Product" /></div>}
-                                    {selectedProduct === 'ALL' && analysisData[getImagePath('2_date_range_summary_ALL.png')] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath('2_date_range_summary_ALL.png')]} alt="Sales in Specified Date Range" /></div>}
-                                    {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)] && <div className="card"><h3><BarChart /> Sales in Specified Date Range</h3><p className="card-subtitle">{formatDateForAPI(summaryFromDate)} to {formatDateForAPI(summaryToDate)}</p><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/date_range_summary_${selectedProduct}.png`)]} alt="Sales in Specified Date Range" /></div>}
+                                    {analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)] && <div className="card full-width"><h3><TrendingUp /> Historical Long-Term Trend</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)]} alt="Historical Long-Term Trend" /></div>}
+                                    {selectedProduct === 'ALL' && analysisData[getImagePath('1_overall_sales_summary.png')] && <div className="card full-width"><h3><BarChart /> Overall Historical Sales</h3><img src={analysisData[getImagePath('1_overall_sales_summary.png')]} alt="Overall Historical Sales by Product" /></div>}
                                     {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)] && <div className="card"><h3><BarChart /> Sales by Day of Week</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_day_of_week.png`)]} alt="Sales by Day of Week" /></div>}
                                     {analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)] && <div className="card"><h3><BarChart /> Sales by Month</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/sales_by_month.png`)]} alt="Sales by Month" /></div>}
-                                    {selectedProduct !== 'ALL' && analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)] && <div className="card"><h3><TrendingUp /> Long-Term Sales Trend</h3><img src={analysisData[getImagePath(`product_analysis_${selectedProduct}/long_term_trend.png`)]} alt="Long-Term Sales Trend" /></div>}
-                                    {historicalSummaryText && <div className="card text-card full-width"><h3><BarChart /> Historical Analysis Summary</h3><div className="summary-content">{renderTextSummary(historicalSummaryText)}</div></div>}
+                                    {historicalSummaryText && <div className="card text-card full-width"><h3><BarChart /> Historical Summary</h3><div className="summary-content">{renderTextSummary(historicalSummaryText)}</div></div>}
                                 </div>
-                            )}
-
-                            {activeTab === 'forecast' && (
+                            </div>
+                            <div className="analysis-section">
+                                <h2 className="section-title"><TrendingUp /> Forecast & Predictions</h2>
+                                <p className="section-subtitle">Forecasted sales volume and key trend components.</p>
                                 <div className="forecast-grid">
                                     {analysisData[getImagePath(`forecast_chart_${selectedProduct}.png`)] && <div className="card full-width">
                                         <h3><TrendingUp /> Long-Term Forecast</h3>
@@ -410,61 +400,56 @@ export default function App() {
                                     {analysisData.custom_forecast_data && <div className="card table-card full-width"><div className="card-header"><h3>Custom Date Range Forecast</h3><button onClick={() => handleDownload(new Blob([analysisData.custom_forecast_csv_text], { type: 'text/csv;charset=utf-8;' }), `custom_forecast_${selectedProduct}.csv`)}><Download /> Download CSV</button></div><p className="card-subtitle">{formatDateForAPI(forecastFromDate)} to {formatDateForAPI(forecastToDate)}</p><div className="table-wrapper"><table><thead><tr>{analysisData.custom_forecast_data.length > 0 && Object.keys(analysisData.custom_forecast_data[0]).map(key => (<th key={key}>{key}</th>))}</tr></thead><tbody>{analysisData.custom_forecast_data.map((row, i) => (<tr key={i}>{Object.values(row).map((val, j) => (<td key={j}>{typeof val === 'string' && val.includes('-') ? val.split(' ')[0] : val}</td>))}</tr>))}</tbody></table></div></div>}
                                     {forecastSummaryText && <div className="card text-card full-width"><h3><TrendingUp /> Forecast Summary</h3><div className="summary-content">{renderTextSummary(forecastSummaryText)}</div></div>}
                                 </div>
+                            </div>
+                        </div>
+                        <div className="ai-column">
+                            {historicalSummaryText && forecastSummaryText && (
+                                <div className="card chat-card">
+                                    <h3><Sparkles /> Ask the AI Assistant</h3>
+                                    <div className="chat-container" ref={chatContainerRef}>
+                                        {chatHistory.length === 0 ? (
+                                            <div className="chat-message-initial">
+                                                <p><strong>I can answer questions about:</strong></p>
+                                                <ul>
+                                                    <li>Historical sales from 2014 to 2019.</li>
+                                                    <li>Sales forecasts {forecastEndDateText}.</li>
+                                                </ul>
+                                                <p><strong>For example, try asking:</strong></p>
+                                                <ul>
+                                                    <li><em>"What was the top product in 2017?"</em></li>
+                                                    <li><em>"Compare N02BE and M01AE in 2026."</em></li>
+                                                </ul>
+                                            </div>
+                                        ) : (
+                                            chatHistory.map((msg, index) => (
+                                                <div key={index} className={`chat-message ${msg.sender}`}>
+                                                    {renderTextSummary(msg.text)}
+                                                </div>
+                                            ))
+                                        )}
+                                        {isAiChatLoading && (
+                                            <div className="chat-message gemini loading">
+                                                <Loader2 className="loader" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <form className="chat-input-form" onSubmit={handleAskAI}>
+                                        <input
+                                            type="text"
+                                            value={userQuestion}
+                                            onChange={(e) => setUserQuestion(e.target.value)}
+                                            placeholder="Ask a question..."
+                                            disabled={isAiChatLoading}
+                                        />
+                                        <button type="submit" disabled={isAiChatLoading || !userQuestion.trim()}>
+                                            <Send />
+                                        </button>
+                                    </form>
+                                </div>
                             )}
                         </div>
                     </div>
-
-                    <div className="ai-column">
-                        {historicalSummaryText && forecastSummaryText && (
-                            <div className="card chat-card">
-                                <h3><Sparkles /> Ask the AI Assistant</h3>
-                                <div className="chat-container" ref={chatContainerRef}>
-                                    {chatHistory.length === 0 ? (
-                                        <div className="chat-message-initial">
-                                            <p><strong>I can answer questions about:</strong></p>
-                                            <ul>
-                                                <li>Historical sales from 2014 to 2019.</li>
-                                                <li>Sales forecasts {forecastEndDateText}.</li>
-                                            </ul>
-                                            <p><strong>For example, try asking:</strong></p>
-                                            <ul>
-                                                <li><em>"What was the top product in 2017?"</em></li>
-                                                <li><em>"Compare N02BE and M01AE in 2026."</em></li>
-                                            </ul>
-                                        </div>
-                                    ) : (
-                                        chatHistory.map((msg, index) => (
-                                            <div key={index} className={`chat-message ${msg.sender}`}>
-                                                {renderTextSummary(msg.text)}
-                                            </div>
-                                        ))
-                                    )}
-                                    {isAiChatLoading && (
-                                        <div className="chat-message gemini loading">
-                                            <Loader2 className="loader" />
-                                        </div>
-                                    )}
-                                </div>
-                                <form className="chat-input-form" onSubmit={handleAskAI}>
-                                    <input
-                                        type="text"
-                                        value={userQuestion}
-                                        onChange={(e) => setUserQuestion(e.target.value)}
-                                        placeholder="Ask a question..."
-                                        disabled={isAiChatLoading}
-                                    />
-                                    <button type="submit" disabled={isAiChatLoading || !userQuestion.trim()}>
-                                        <Send />
-                                    </button>
-                                </form>
-                            </div>
-                        )}
-                    </div>
                 </main>
-            ) : (
-                <div className="initial-state-container">
-                    <p className="initial-message">Select a product and a date range to generate your analysis report.</p>
-                </div>
             )}
         </div>
     );
