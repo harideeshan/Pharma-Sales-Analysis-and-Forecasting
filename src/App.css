@@ -1,19 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
+/* --- Color Palette --- */
 :root {
-  --primary-color: #2e7d32; /* A shade of green for a pharma feel */
-  --primary-dark: #1b5e20;
-  --secondary-color: #e8f5e9; /* Light green for accents */
-  --background-color: #f7f9fc;
+  --primary-color: #388e3c; /* A deep, professional green */
+  --primary-dark: #2e7d32;
+  --secondary-color: #c8e6c9; /* Lighter, more vibrant green for accents */
+  --background-color: #f0f4f7; /* Light gray-blue for a calming backdrop */
   --surface-color: #ffffff;
-  --text-color: #212529;
-  --subtle-text: #6c757d;
+  --text-color: #263238; /* Dark charcoal for high contrast */
+  --subtle-text: #607d8b;
   --border-color: #e0e0e0;
-  --error-color: #dc3545;
+  --error-color: #d32f2f;
   --chat-user-bg: #e0f2f1;
-  --chat-ai-bg: #e9ecef;
+  --chat-ai-bg: #eceff1;
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
+/* --- Global & Typography --- */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -29,21 +33,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* --- Header Section --- */
 .header {
   background-color: var(--surface-color);
-  padding: 2rem 4rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 2.5rem 4rem;
+  box-shadow: var(--shadow-medium);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .header .title-section {
@@ -51,59 +61,72 @@ body {
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--primary-color);
+  font-size: 3rem;
+  color: var(--primary-dark);
   margin-bottom: 0.5rem;
 }
 
 .header p {
   font-size: 1.1rem;
   color: var(--subtle-text);
+  font-weight: 500;
   margin-bottom: 0;
 }
 
 .header-icon {
-  width: 4rem;
-  height: 4rem;
+  width: 4.5rem;
+  height: 4.5rem;
   color: var(--primary-color);
 }
 
+/* --- Controls & Inputs --- */
 .controls {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-end; /* Align items to the bottom */
+  align-items: flex-end;
   gap: 1.5rem;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1300px;
 }
 
 .select-container {
   position: relative;
   flex-grow: 1;
-  min-width: 200px; /* Adjusted min-width */
+  min-width: 250px;
 }
 
 .select-container select {
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  padding: 0.85rem 0.85rem 0.85rem 2.8rem;
   font-size: 1rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   background-color: var(--surface-color);
   appearance: none;
   cursor: pointer;
-  height: 44px; /* Ensure consistent height */
+  height: 50px;
+  box-shadow: var(--shadow-light);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.select-container select:hover {
+  border-color: var(--primary-color);
+}
+
+.select-container select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(56, 142, 60, 0.3);
 }
 
 .select-container .search-icon {
   position: absolute;
   top: 50%;
-  left: 0.75rem;
+  left: 1rem;
   transform: translateY(-50%);
   color: var(--subtle-text);
-  pointer-events: none; /* Make icon unclickable */
+  pointer-events: none;
 }
 
 .date-controls {
@@ -116,7 +139,7 @@ body {
 .date-range-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .date-range-group .group-label {
@@ -126,48 +149,73 @@ body {
 
 .date-inputs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .date-picker-input {
-  padding: 0.75rem;
+  padding: 0.85rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   background-color: var(--surface-color);
   cursor: pointer;
   text-align: center;
-  width: 130px; /* Fixed width for date pickers */
-  height: 44px; /* Ensure consistent height */
+  width: 140px;
+  height: 50px;
+  box-shadow: var(--shadow-light);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.date-picker-input:hover {
+  border-color: var(--primary-color);
+}
+
+.date-picker-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(56, 142, 60, 0.3);
+}
+
+.react-datepicker-wrapper {
+  width: auto;
+}
+
+/* --- Buttons --- */
 .generate-button, .download-button, .tab-button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.75rem;
   font-size: 1rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  gap: 0.6rem;
+  transition: all 0.2s ease-in-out;
   white-space: nowrap;
-  height: 44px; /* Ensure consistent height */
+  height: 50px;
 }
 
 .generate-button {
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: white;
+  box-shadow: 0 4px 15px rgba(56, 142, 60, 0.4);
 }
 
 .generate-button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 142, 60, 0.5);
+}
+
+.generate-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(56, 142, 60, 0.4);
 }
 
 .generate-button:disabled {
-  background-color: #b0c9b0;
+  background: #a5d6a7;
   cursor: not-allowed;
-  opacity: 0.8;
+  opacity: 0.7;
+  box-shadow: none;
 }
 
 .error {
@@ -187,18 +235,21 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* --- Main Dashboard Layout --- */
 .initial-state-container {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
 }
 
 .initial-message {
-    font-size: 1.5rem;
-    font-style: italic;
-    color: var(--subtle-text);
+  font-size: 1.8rem;
+  font-style: italic;
+  color: var(--subtle-text);
+  max-width: 600px;
 }
 
 .main-dashboard {
@@ -214,12 +265,12 @@ body {
   flex: 3;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Reduced gap */
+  gap: 2rem;
 }
 
 .ai-column {
   flex: 1;
-  min-width: 350px;
+  min-width: 380px;
 }
 
 .dashboard-header {
@@ -231,23 +282,24 @@ body {
 }
 
 .dashboard-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .dashboard-header span {
   color: var(--primary-color);
-  font-weight: 700;
 }
 
 .download-button {
   background-color: var(--surface-color);
   color: var(--text-color);
   border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-light);
 }
 
 .download-button:hover:not(:disabled) {
   background-color: var(--background-color);
+  transform: translateY(-1px);
 }
 
 .download-button:disabled {
@@ -255,16 +307,17 @@ body {
   cursor: not-allowed;
 }
 
+/* --- Tabs --- */
 .tabs {
   display: flex;
   border-bottom: 2px solid var(--border-color);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .tab-button {
   background: none;
   border: none;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.2rem;
   font-size: 1rem;
   font-weight: 600;
   color: var(--subtle-text);
@@ -281,45 +334,51 @@ body {
   color: var(--primary-dark);
 }
 
+/* --- Cards & Content --- */
 .card {
   background-color: var(--surface-color);
-  border-radius: 12px;
-  padding: 1.5rem; /* Slightly reduced padding */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow-light);
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Reduced gap inside cards */
+  gap: 1.5rem;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-medium);
 }
 
 .card h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   color: var(--primary-dark);
 }
 
 .card img {
   max-width: 100%;
   height: auto;
-  border-radius: 8px;
-  display: block; /* Ensures image takes full width in its container */
-  object-fit: contain; /* Ensures image is fully visible without cropping */
+  border-radius: 12px;
+  display: block;
+  object-fit: contain;
 }
 
 .card-subtitle {
-    color: var(--subtle-text);
-    font-style: italic;
-    font-size: 0.9rem;
-    margin-top: -0.5rem; /* Adjusted margin */
-    margin-bottom: 0.5rem;
+  color: var(--subtle-text);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-top: -1rem;
+  margin-bottom: 0.5rem;
 }
 
 .historical-grid, .forecast-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* More flexible grid */
-  gap: 1.5rem; /* Reduced gap */
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
 }
 
 .card.full-width {
@@ -327,7 +386,7 @@ body {
 }
 
 .text-card p {
-  margin-bottom: 0.75rem; /* Reduced margin */
+  margin-bottom: 0.75rem;
   font-size: 1rem;
   color: var(--text-color);
 }
@@ -340,27 +399,27 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; /* Allow wrapping for smaller screens */
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  max-width: 100%; /* Ensure table doesn't overflow */
+  max-width: 100%;
 }
 
 .table-wrapper table {
   width: 100%;
   border-collapse: collapse;
   white-space: nowrap;
-  min-width: 600px; /* Ensure a minimum width for readability */
+  min-width: 600px;
 }
 
 .table-wrapper th, .table-wrapper td {
   text-align: left;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -374,28 +433,29 @@ body {
   border-bottom: none;
 }
 
-/* AI Chat Sidebar */
+/* --- AI Chat Sidebar --- */
 .chat-card {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .chat-container {
   flex-grow: 1;
   overflow-y: auto;
   margin-bottom: 1rem;
-  padding-right: 0.5rem; /* For scrollbar space */
+  padding-right: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 .chat-message {
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  padding: 0.85rem 1.2rem;
+  border-radius: 18px;
   max-width: 90%;
+  font-size: 0.95rem;
 }
 
 .chat-message.user {
@@ -408,10 +468,11 @@ body {
   background-color: var(--chat-ai-bg);
   align-self: flex-start;
   text-align: left;
+  line-height: 1.5;
 }
 
 .chat-message-initial {
-  padding: 1rem;
+  padding: 1.25rem;
   background-color: #f0f4f7;
   border-radius: 12px;
   color: #495057;
@@ -425,7 +486,7 @@ body {
 }
 
 .chat-message-initial ul {
-  list-style-type: disc; /* Changed to disc for better readability */
+  list-style-type: disc;
   padding-left: 1.5rem;
   margin-bottom: 0.5rem;
 }
@@ -433,112 +494,161 @@ body {
 .chat-message.loading {
   background-color: var(--chat-ai-bg);
   text-align: center;
-  width: fit-content; /* Make loading spinner container fit content */
+  width: fit-content;
   align-self: flex-start;
 }
 
 .chat-input-form {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .chat-input-form input {
   flex-grow: 1;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.2rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   background-color: var(--background-color);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.chat-input-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(56, 142, 60, 0.3);
 }
 
 .chat-input-form button {
-  background-color: var(--primary-color);
+  background: var(--primary-color);
   color: white;
   border: none;
-  padding: 0.75rem;
-  border-radius: 8px;
+  padding: 0.85rem;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .chat-input-form button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
+  transform: scale(1.05);
+  background: var(--primary-dark);
 }
 
 .chat-input-form button:disabled {
-  background-color: #b0c9b0;
+  background: #a5d6a7;
   cursor: not-allowed;
   opacity: 0.8;
 }
 
-/* Responsive design */
+/* --- Responsive Design --- */
 @media (max-width: 1200px) {
-    .main-dashboard {
-        flex-direction: column;
-        padding: 1rem;
-        gap: 1rem;
-    }
-
-    .header {
-        padding: 1.5rem 2rem;
-    }
-
-    .controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .date-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .date-inputs {
-        flex-wrap: wrap; /* Allow date pickers to wrap */
-        justify-content: center;
-    }
-
-    .date-picker-input {
-        width: calc(50% - 0.25rem); /* Two date pickers per line on smaller screens */
-    }
-
-    .historical-grid, .forecast-grid {
-        grid-template-columns: 1fr;
-    }
+  .main-dashboard {
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+  .header {
+    padding: 2rem;
+  }
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .date-controls {
+    flex-direction: row;
+    justify-content: center;
+  }
+  .date-inputs {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .date-picker-input {
+    width: 150px;
+  }
+  .historical-grid, .forecast-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-@media (max-width: 600px) {
-    .header h1 {
-        font-size: 2rem;
-    }
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2.2rem;
+  }
+  .header {
+    padding: 1.5rem;
+  }
+  .date-controls {
+    flex-direction: column;
+  }
+  .date-inputs {
+    flex-direction: column;
+  }
+  .date-picker-input {
+    width: 100%;
+  }
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .download-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .card {
+    padding: 1.5rem;
+  }
+  .card h3 {
+    font-size: 1.2rem;
+  }
+  .table-wrapper table {
+    min-width: 100%;
+  }
+  .ai-column {
+    min-width: 100%;
+  }
+}
 
-    .header {
-        padding: 1rem;
-    }
-
-    .date-inputs {
-        flex-direction: column;
-    }
-
-    .date-picker-input {
-        width: 100%; /* Full width on very small screens */
-    }
-
-    .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .download-button {
-        width: 100%;
-        justify-content: center;
-    }
-    .card {
-      padding: 1rem;
-    }
-    .card h3 {
-      font-size: 1.1rem;
-    }
+/* --- Print Styles for Graphs --- */
+@media print {
+  body {
+    background-color: #fff;
+    color: #000;
+  }
+  .header, .controls, .ai-column, .download-button, .tabs, .tab-button, .card-header button {
+    display: none !important;
+  }
+  .app-container, .main-dashboard, .analysis-column {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .card {
+    border: 1px solid #ccc;
+    box-shadow: none;
+    margin: 1.5rem 0;
+    page-break-inside: avoid;
+  }
+  .card h3 {
+    color: #000;
+  }
+  .card img {
+    max-width: 100%;
+    height: auto;
+    border: none;
+    box-shadow: none;
+  }
+  
+  /* Make sure graphs are centered and fully visible */
+  .historical-grid, .forecast-grid {
+    display: block;
+  }
+  
+  .card.full-width {
+    width: 100%;
+    max-width: 100%;
+  }
 }
