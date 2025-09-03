@@ -102,7 +102,7 @@ h1, h2, h3 {
   font-size: 1rem;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background-color: var(--secondary-color); /* Updated background color */
+  background-color: var(--secondary-color);
   appearance: none;
   cursor: pointer;
   height: 50px;
@@ -158,7 +158,7 @@ h1, h2, h3 {
   padding: 0.85rem;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background-color: var(--secondary-color); /* Updated background color */
+  background-color: var(--secondary-color);
   cursor: pointer;
   text-align: center;
   width: 140px;
@@ -275,6 +275,10 @@ h1, h2, h3 {
 .ai-column {
   flex: 1;
   min-width: 380px;
+  position: sticky; /* Make it sticky */
+  top: 2rem; /* Stick it to the top with some margin */
+  align-self: flex-start; /* Ensure it stays at the top of the flex container */
+  height: calc(100vh - 4rem); /* Set height to fill the remaining viewport, minus top/bottom margin */
 }
 
 .dashboard-header {
@@ -409,10 +413,10 @@ h1, h2, h3 {
 }
 
 .table-wrapper {
-  overflow: auto; /* Changed to auto for both horizontal and vertical scroll */
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   max-width: 100%;
-  max-height: 400px; /* Added max height to make it compact */
+  max-height: 400px;
 }
 
 .table-wrapper table {
@@ -576,6 +580,12 @@ h1, h2, h3 {
   .historical-grid, .forecast-grid {
     grid-template-columns: 1fr;
   }
+  .ai-column {
+    position: relative; /* Make it relative on smaller screens to prevent overflow */
+    top: auto;
+    align-self: auto;
+    height: auto;
+  }
 }
 
 @media (max-width: 768px) {
@@ -650,7 +660,7 @@ h1, h2, h3 {
   /* Make sure graphs are centered and fully visible */
   .historical-grid, .forecast-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Two graphs side-by-side on print */
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
   }
   
@@ -658,7 +668,7 @@ h1, h2, h3 {
     grid-column: 1 / -1;
   }
   .table-wrapper {
-    overflow: hidden; /* Hide scrollbars when printing */
+    overflow: hidden;
     max-height: none;
   }
 }
