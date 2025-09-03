@@ -102,12 +102,14 @@ h1, h2, h3 {
   font-size: 1rem;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background-color: var(--surface-color);
+  background-color: var(--secondary-color); /* Updated background color */
   appearance: none;
   cursor: pointer;
   height: 50px;
   box-shadow: var(--shadow-light);
   transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--primary-dark);
+  font-weight: 500;
 }
 
 .select-container select:hover {
@@ -125,7 +127,7 @@ h1, h2, h3 {
   top: 50%;
   left: 1rem;
   transform: translateY(-50%);
-  color: var(--subtle-text);
+  color: var(--primary-dark);
   pointer-events: none;
 }
 
@@ -156,13 +158,15 @@ h1, h2, h3 {
   padding: 0.85rem;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background-color: var(--surface-color);
+  background-color: var(--secondary-color); /* Updated background color */
   cursor: pointer;
   text-align: center;
   width: 140px;
   height: 50px;
   box-shadow: var(--shadow-light);
   transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--primary-dark);
+  font-weight: 500;
 }
 
 .date-picker-input:hover {
@@ -405,9 +409,10 @@ h1, h2, h3 {
 }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow: auto; /* Changed to auto for both horizontal and vertical scroll */
   -webkit-overflow-scrolling: touch;
   max-width: 100%;
+  max-height: 400px; /* Added max height to make it compact */
 }
 
 .table-wrapper table {
@@ -644,11 +649,16 @@ h1, h2, h3 {
   
   /* Make sure graphs are centered and fully visible */
   .historical-grid, .forecast-grid {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two graphs side-by-side on print */
+    gap: 1.5rem;
   }
   
   .card.full-width {
-    width: 100%;
-    max-width: 100%;
+    grid-column: 1 / -1;
+  }
+  .table-wrapper {
+    overflow: hidden; /* Hide scrollbars when printing */
+    max-height: none;
   }
 }
