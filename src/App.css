@@ -247,6 +247,10 @@ h1, h2, h3 {
   align-items: center;
   padding: 2rem;
   text-align: center;
+  background-color: var(--secondary-color); /* Add this line for the green background */
+  margin: 2rem 0; /* Add some vertical margin to separate it from other elements */
+  border-radius: 16px; /* Match the card border-radius for consistency */
+  box-shadow: var(--shadow-light); /* Add a subtle shadow for depth */
 }
 
 .initial-message {
@@ -581,7 +585,7 @@ h1, h2, h3 {
     grid-template-columns: 1fr;
   }
   .ai-column {
-    position: relative; /* Make it relative on smaller screens to prevent overflow */
+    position: relative;
     top: auto;
     align-self: auto;
     height: auto;
