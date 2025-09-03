@@ -26,7 +26,7 @@
 
 body {
   font-family: 'Poppins', sans-serif;
-  background-color: var(--background-color);
+  background-color: var(--secondary-color); /* Changed to secondary green */
   color: var(--text-color);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -247,10 +247,10 @@ h1, h2, h3 {
   align-items: center;
   padding: 2rem;
   text-align: center;
-  background-color: var(--secondary-color); /* Add this line for the green background */
-  margin: 2rem 0; /* Add some vertical margin to separate it from other elements */
-  border-radius: 16px; /* Match the card border-radius for consistency */
-  box-shadow: var(--shadow-light); /* Add a subtle shadow for depth */
+  background-color: var(--secondary-color);
+  margin: 2rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-light);
 }
 
 .initial-message {
@@ -279,10 +279,10 @@ h1, h2, h3 {
 .ai-column {
   flex: 1;
   min-width: 380px;
-  position: sticky; /* Make it sticky */
-  top: 2rem; /* Stick it to the top with some margin */
-  align-self: flex-start; /* Ensure it stays at the top of the flex container */
-  height: calc(100vh - 4rem); /* Set height to fill the remaining viewport, minus top/bottom margin */
+  position: sticky;
+  top: 2rem;
+  align-self: flex-start;
+  height: calc(100vh - 4rem);
 }
 
 .dashboard-header {
@@ -348,7 +348,7 @@ h1, h2, h3 {
 
 /* --- Cards & Content --- */
 .card {
-  background-color: var(--surface-color);
+  background-color: #e3f2e4; /* A slightly darker green */
   border-radius: 16px;
   padding: 2rem;
   box-shadow: var(--shadow-light);
